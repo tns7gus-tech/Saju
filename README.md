@@ -6,20 +6,23 @@
 
 ## 실행
 
-Node.js 22.13 이상이 필요합니다. 외부 패키지는 설치하지 않습니다.
+Node.js 22.13 이상이 필요합니다. 자체 만세력 계산에는 MIT 라이선스의 `lunar-javascript`를 사용합니다.
 
 ```bash
 cp .env.example .env
-# .env 값을 배포 환경 변수로 설정하거나 셸에서 export 하세요.
-OPENAI_API_KEY=... npm start
+npm ci
+npm start
 ```
 
-`http://localhost:3000`에서 확인합니다. `.env` 파일은 자동으로 읽지 않으므로 로컬에서 환경 변수를 셸에 직접 설정하거나 `node --env-file=.env server.js`를 실행합니다. `OPENAI_API_KEY`가 없으면 **데모 모드**로 실행되어 이미지 분석을 하지 않고 안내 문구만 반환합니다. 실제 OpenAI 요청은 서버에서만 전송되며 키는 브라우저 코드에 들어가지 않습니다. `npm test`로 핵심 API 테스트를 실행합니다.
+`http://localhost:3000`에서 확인합니다. **생년월일시로 만드는 자체 만세력과 기본 규칙 해석에는 API 키가 필요하지 않습니다.** `.env` 파일은 자동으로 읽지 않습니다. 기존 캡처의 AI 분석을 선택하려면 셸 환경 변수 `OPENAI_API_KEY`를 설정하거나 `node --env-file=.env server.js`를 실행합니다. 키가 없을 때 캡처 업로드 경로는 데모 안내만 보여줍니다. 실제 OpenAI 요청은 서버에서만 전송되며 키는 브라우저 코드에 들어가지 않습니다. `npm test`로 핵심 API 테스트를 실행합니다.
 
-정적 GitHub Pages만으로는 로그인, 추천 보상, OpenAI 서버 요청을 실행할 수 없습니다. 이 저장소를 Node 서버를 실행할 수 있는 호스팅에 배포하고, 운영 환경에서 `OPENAI_API_KEY`, `NODE_ENV=production`, `PUBLIC_ORIGIN=https://실제도메인`, 영속적인 `DATA_DIR`을 설정해야 합니다. HTTPS와 백업이 필요합니다. 서버를 여러 인스턴스로 늘릴 때에는 SQLite 파일 공유 대신 운영 DB로 교체해야 합니다.
+정적 GitHub Pages만으로는 로그인, 추천 보상, 규칙 계산 API를 실행할 수 없습니다. 이 저장소를 Node 서버를 실행할 수 있는 호스팅에 배포하고, 운영 환경에서 `NODE_ENV=production`, `PUBLIC_ORIGIN=https://실제도메인`, 영속적인 `DATA_DIR`을 설정해야 합니다. `OPENAI_API_KEY`는 **캡처 AI 분석을 운영할 때만** 설정합니다. HTTPS와 백업이 필요합니다. 서버를 여러 인스턴스로 늘릴 때에는 SQLite 파일 공유 대신 운영 DB로 교체해야 합니다.
 
 ## 현재 동작
 
+- 양력/음력·윤달·생년월일시·전통 대운 계산 기준을 입력해 네 기둥, 십성, 지장간, 12운성, 눈에 보이는 오행 분포, 대운 배열을 **로컬 규칙 엔진**으로 계산합니다. 고정된 설명 규칙을 조합한 간단한 해석과 PNG 차트 저장은 OpenAI 호출 없이 동작합니다.
+- 입력 시각이 없으면 시주와 정확한 대운 시작을 비워둡니다. 현재 기준은 한국 현지 표준시·출생지 보정 없음·00시 일주 교체로 고정되어 있습니다. 절입, 자시, 과거 시간대, 출생지 보정 경계는 자체 만세력 엔진 조사 문서의 미검증 항목입니다.
+- 규칙 해석은 계산 근거와 대화 질문에 초점을 둔 **기본형**입니다. 요청한 12개 항목의 장문 상담 보고서나 신강·용신·합충·신살 판정을 완전하게 재현한다고 주장하지 않습니다. 그런 규칙은 검증한 뒤 독립 모듈로 확장해야 합니다.
 - 이미지 선택 또는 모바일 카메라 촬영. 4MB 이하 JPG/PNG/WEBP. 외부 무료 만세력 페이지에서 캡처를 만드는 링크도 제공합니다. 원본 이미지는 디스크에 저장하지 않습니다.
 - AI가 이미지를 근거로 12개 주제의 보고서를 생성합니다. 보이지 않는 항목은 추정하지 않도록 지시합니다. 원국 계산을 검증하는 별도 역법 엔진은 **아직 없습니다**. 사진의 판독과 명리 해석이 맞는지는 사람이 검토해야 합니다.
 - 게스트에게는 서버가 잘라낸 첫 300자만 전송합니다. 전체 본문은 CSS로만 숨기지 않고 서버 권한 확인 후에만 반환합니다.
@@ -47,7 +50,7 @@ Dropbox의 초기 가치: 파일을 어느 기기에서나 쉽게 동기화하�
 
 ## API와 주의점
 
-`GET /api/bootstrap`, `POST /api/register`, `POST /api/login`, `POST /api/logout`, `POST /api/analysis`, `GET /api/analyses/:id`, `POST /api/redeem`, `POST /api/event`, `POST /api/account/delete`.
+`GET /api/bootstrap`, `POST /api/register`, `POST /api/login`, `POST /api/logout`, `POST /api/manse`(자체 계산), `POST /api/analysis`(선택적 이미지 AI), `GET /api/analyses/:id`, `POST /api/redeem`, `POST /api/event`, `POST /api/account/delete`.
 
 비밀번호는 scrypt로 해시하고 세션은 HttpOnly 쿠키로 전달합니다. 원본 이미지는 저장하지 않지만 OpenAI API로 전달되며 생성된 보고서에는 출생 정보가 포함될 수 있습니다. 사용자에게 데이터 사용과 삭제 방법을 고지해야 합니다. 공개 서비스에는 가입 이메일 인증, IP 기반 악용 방지, 접근 로그/모니터링, 개인정보 처리방침, 백업 및 삭제 UI가 추가로 필요합니다. 결제 기능은 구현되지 않았습니다.
 
