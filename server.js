@@ -73,7 +73,7 @@ const publicCards = [
   {title:'작은 선택',question:'새로운 동네에 가면 계획을 세우나요, 걷다가 발견하나요?'}
 ];
 function safeAnalysis(row, session, user) {
-  if (!row || (row.session_hash !== session.token_hash && row.user_id !== user?.id)) bad('결과를 찾을 수 없습니다.',404);
+  if (!row || (row.user_id ? row.user_id !== user?.id : row.session_hash !== session.token_hash)) bad('결과를 찾을 수 없습니다.',404);
   // Full text is only serialized after a server-side entitlement check. CSS blur alone cannot protect it.
   return {id:row.id,preview:row.body.startsWith('데모 모드:')?previewText:row.body.slice(0,300).trim()+'…',full:canRead(user)?row.body:null,locked:!canRead(user)};
 }
@@ -94,7 +94,7 @@ async function api(req,res,url) {
     const inviter=String(b.ref||'').trim().toUpperCase(); const parent=inviter ? db.prepare('SELECT id FROM users WHERE code=?').get(inviter) : null;
     db.prepare('INSERT INTO users VALUES (?,?,?,?,?,?,?)').run(id,email,passwordHash(password),code,parent?.id||null,0,now());
     db.prepare('UPDATE sessions SET user_id=? WHERE token_hash=?').run(id,session.token_hash);
-    db.prepare('UPDATE analyses SET user_id=? WHERE session_hash=?').run(id,session.token_hash);
+    db.prepare('UPDATE analyses SET user_id=? WHERE session_hash=? AND user_id IS NULL').run(id,session.token_hash);
     // Count one actual registered account once; do not count visits, links, or a user's own code.
     if(parent && parent.id!==id) {
       db.prepare('INSERT INTO referrals VALUES (?,?,?)').run(id,parent.id,now());
@@ -108,7 +108,7 @@ async function api(req,res,url) {
     const found=db.prepare('SELECT * FROM users WHERE email=?').get(String(b.email||'').trim().toLowerCase());
     if(!found || !passwordMatches(String(b.password||''),found.password)) bad('이메일 또는 비밀번호를 확인해주세요.',401);
     db.prepare('UPDATE sessions SET user_id=? WHERE token_hash=?').run(found.id,session.token_hash);
-    db.prepare('UPDATE analyses SET user_id=? WHERE session_hash=?').run(found.id,session.token_hash);
+    db.prepare('UPDATE analyses SET user_id=? WHERE session_hash=? AND user_id IS NULL').run(found.id,session.token_hash);
     event('login',found.id);return json(res,200,view(userOf({...session,user_id:found.id})));
   }
   if(url.pathname==='/api/logout') { db.prepare('UPDATE sessions SET user_id=NULL WHERE token_hash=?').run(session.token_hash); return json(res,200,view(null)); }
@@ -159,6 +159,6 @@ export function createServer() {return http.createServer(async(req,res)=>{
     let contents;try{contents=fs.readFileSync(file);}catch{return json(res,404,{error:'페이지를 찾을 수 없습니다.'});}
     res.writeHead(200,{'Content-Type':mime[path.extname(file)]||'application/octet-stream','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'self'; img-src 'self' blob: data:; script-src 'self'; style-src 'self'; connect-src 'self'; frame-ancestors 'none'",'Referrer-Policy':'strict-origin-when-cross-origin'});
     res.end(req.method==='HEAD'?undefined:contents);
-  } catch(err) { console.error(err);json(res,err.status||500,{error:err.status?err.message:'요청을 처리하지 못했습니다. 잠시 후 다시 시도해주세요.'}); }
+  } catch(err) { if(!err.status) console.error(err);json(res,err.status||500,{error:err.status?err.message:'요청을 처리하지 못했습니다. 잠시 후 다시 시도해주세요.'}); }
 });}
 if(process.argv[1]===fileURLToPath(import.meta.url)) createServer().listen(PORT,()=>console.log(`Saju listening on http://localhost:${PORT}`));
