@@ -10,7 +10,7 @@ const post=(url,data)=>api(url,{method:'POST',body:JSON.stringify(data)});
 function renderAuth() {
   $('authButton').textContent=state.user ? '내 계정 · 로그아웃' : '로그인 / 가입';
   $('deleteAccount').hidden=!state.user;
-  $('freePill').textContent=`매주 ${days[state.freeWeekday || 3]}요일 · 전체 풀이 무료${state.freeToday?' (오늘 무료)':''}`;
+  $('freePill').textContent=`매주 ${days[state.freeWeekday ?? 3]}요일 · 전체 풀이 무료${state.freeToday?' (오늘 무료)':''}`;
   if(state.user){
     $('referralBox').replaceChildren();
     const code=document.createElement('p');code.className='invite-code';code.textContent=`내 초대 코드 ${state.user.code} · 남은 이용권 ${state.user.credits}장`;
@@ -29,7 +29,7 @@ function renderResult(result) {
   $('locked').hidden=!result.locked;$('report').hidden=result.locked;
   if(!result.locked){$('report').textContent=result.full;post('/api/event',{name:'card_opened'}).catch(()=>{});}
   if(result.locked){
-    $('gateText').textContent=!state.user?'가입 후 무료 요일 또는 초대 이용권으로 전체 풀이를 확인할 수 있어요.':`매주 ${days[state.freeWeekday || 3]}요일에 무료예요. 친구 5명 초대로 1일 이용권을 받을 수도 있어요.`;
+    $('gateText').textContent=!state.user?'가입 후 무료 요일 또는 초대 이용권으로 전체 풀이를 확인할 수 있어요.':`매주 ${days[state.freeWeekday ?? 3]}요일에 무료예요. 친구 5명 초대로 1일 이용권을 받을 수도 있어요.`;
     $('gateButton').textContent=!state.user?'회원가입하고 이어서 보기 ↗':state.user.credits>0?'이용권 1장 사용하기 ↗':'초대 혜택 보기 ↗';
     post('/api/event',{name:'report_gate_viewed'}).catch(()=>{});
   }
