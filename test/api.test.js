@@ -44,3 +44,14 @@ test('five real registrations grant one pass to referrer',async()=>{
   r=await inviter('/api/bootstrap');assert.equal(r.data.user.credits,1);
   const dup=await client()('/api/register',{email:'friend0@example.com',password:'very-strong-password',ref:code});assert.equal(dup.status,409);
 });
+
+test('changing accounts on one browser does not transfer saved results',async()=>{
+  const call=client();await call('/api/bootstrap');
+  await call('/api/register',{email:'alice@example.com',password:'very-strong-password'});
+  const created=await call('/api/analysis',{image:'data:image/png;base64,iVBORw0KGgo='});
+  assert.equal(created.status,201);
+  await call('/api/logout',{});
+  await call('/api/register',{email:'bob@example.com',password:'very-strong-password'});
+  const result=await call(`/api/analyses/${created.data.id}`);
+  assert.equal(result.status,404);
+});
