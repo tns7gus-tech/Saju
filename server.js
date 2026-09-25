@@ -5,6 +5,7 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
 import { analysisPrompt } from './prompts.js';
+import { calculateManse, interpretRules } from './manse.js';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.resolve(process.env.DATA_DIR || path.join(root, 'data'));
@@ -18,6 +19,7 @@ db.exec(`PRAGMA journal_mode=WAL;
  CREATE TABLE IF NOT EXISTS access_grants (user_id TEXT PRIMARY KEY, expires_at TEXT NOT NULL);
  CREATE TABLE IF NOT EXISTS events (id TEXT PRIMARY KEY, name TEXT NOT NULL, user_id TEXT, created_at TEXT NOT NULL);
 `);
+if(!db.prepare('PRAGMA table_info(analyses)').all().some(c=>c.name==='chart_json')) db.exec('ALTER TABLE analyses ADD COLUMN chart_json TEXT');
 const PORT = Number(process.env.PORT || 3000);
 const freeDay = Number(process.env.FREE_WEEKDAY ?? 3); // 0 Sunday, 3 Wednesday, Korean time
 const validDay = Number.isInteger(freeDay) && freeDay >= 0 && freeDay <= 6 ? freeDay : 3;
@@ -75,7 +77,7 @@ const publicCards = [
 function safeAnalysis(row, session, user) {
   if (!row || (row.user_id ? row.user_id !== user?.id : row.session_hash !== session.token_hash)) bad('결과를 찾을 수 없습니다.',404);
   // Full text is only serialized after a server-side entitlement check. CSS blur alone cannot protect it.
-  return {id:row.id,preview:row.body.startsWith('데모 모드:')?previewText:row.body.slice(0,300).trim()+'…',full:canRead(user)?row.body:null,locked:!canRead(user)};
+  return {id:row.id,preview:row.body.startsWith('데모 모드:')?previewText:row.body.slice(0,300).trim()+'…',chart:row.chart_json?JSON.parse(row.chart_json):null,full:canRead(user)?row.body:null,locked:!canRead(user)};
 }
 async function api(req,res,url) {
   const session=getSession(req,res), user=userOf(session);
@@ -112,6 +114,15 @@ async function api(req,res,url) {
     event('login',found.id);return json(res,200,view(userOf({...session,user_id:found.id})));
   }
   if(url.pathname==='/api/logout') { db.prepare('UPDATE sessions SET user_id=NULL WHERE token_hash=?').run(session.token_hash); return json(res,200,view(null)); }
+  if(url.pathname==='/api/manse') {
+    const count=db.prepare('SELECT count(*) n FROM analyses WHERE session_hash=? AND created_at>?').get(session.token_hash,new Date(Date.now()-86400000).toISOString()).n;
+    if(count>=20) bad('하루 계산 횟수에 도달했습니다. 내일 다시 이용해주세요.',429);
+    const chart=calculateManse(b);
+    const priority=['연애','금전','결혼','직업','건강','가족','부동산'].includes(b.priority)?b.priority:'연애';
+    const report=interpretRules(chart,{priority,mode:b.mode==='date'?'date':'solo'});
+    const id=randomId();db.prepare('INSERT INTO analyses(id,session_hash,user_id,body,created_at,chart_json) VALUES(?,?,?,?,?,?)').run(id,session.token_hash,user?.id||null,report,now(),JSON.stringify(chart));
+    event('manse_calculated',user?.id);return json(res,201,safeAnalysis(db.prepare('SELECT * FROM analyses WHERE id=?').get(id),session,user));
+  }
   if(url.pathname==='/api/account/delete') {
     if(!user) bad('먼저 로그인해주세요.',401);
     db.prepare('DELETE FROM analyses WHERE user_id=?').run(user.id);
@@ -130,7 +141,7 @@ async function api(req,res,url) {
     if(process.env.OPENAI_API_KEY) report=await generateReport(image,String(b.priority||'연애').slice(0,20),b.mode==='date'?'date':'solo');
     else report='데모 모드: AI 키가 연결되면 업로드한 만세력 이미지를 근거로 12개 항목을 분석합니다. 지금은 실제 사주를 판독하거나 예측하지 않습니다.';
     if(!report) bad('이미지에서 결과를 생성하지 못했습니다. 더 선명한 캡처를 시도해주세요.',422);
-    const id=randomId();db.prepare('INSERT INTO analyses VALUES (?,?,?,?,?)').run(id,session.token_hash,user?.id||null,report,now());
+    const id=randomId();db.prepare('INSERT INTO analyses(id,session_hash,user_id,body,created_at) VALUES(?,?,?,?,?)').run(id,session.token_hash,user?.id||null,report,now());
     event('analysis_created',user?.id);return json(res,201,safeAnalysis(db.prepare('SELECT * FROM analyses WHERE id=?').get(id),session,user));
   }
   if(url.pathname==='/api/redeem') {
