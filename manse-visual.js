@@ -59,7 +59,7 @@
     put(summary,'small','',`위부터 천간 십성, 천간·지지, 지지 십성, 지장간, 12운성, 납음. 신살·귀인 및 합충형파해는 앱별 규칙 확인 전까지 표시하지 않습니다.`);
     const fortunes=$('fortuneTables');fortunes.replaceChildren();
     if(luck){
-      const note=`대운수 약 ${luck.periods[0].startAge-1}년 · ${luck.direction} · 각 나이는 시작 당시 만 나이 기준입니다.`;
+      const note=`대운수 약 ${luck.periods[0].startAge-1}년 · ${luck.direction} · 나이는 참고 화면의 대운수 표기 방식입니다. 실제 만 나이와 다를 수 있습니다.`;
       fortuneGroup(fortunes,'대운 · 10년 흐름',luck.periods.map(p=>({label:`${p.startAge-1}세 · ${p.startYear}년`,gz:p.ganZhi})),day,note);
     }else put(fortunes,'p','fortune-note','대운은 출생 시각과 대운 계산 기준을 입력하면 볼 수 있습니다.');
     const years=[];for(let y=now-1;y<=now+5;y++){
