@@ -26,3 +26,12 @@ test('each selected month returns exactly 20 compact points, with separate game 
   assert.match(september.lines[18].text,/왼쪽/);
   assert.match(september.lines[19].text,/무작위 질문/);
 });
+
+test('all short summaries use everyday Korean instead of unexplained chart labels',()=>{
+  const chart=window.calculateStaticManse({calendar:'solar',date:'950228',time:'1245',gender:'male',leapMonth:false,relationshipStatus:'single'});
+  for(let month=1;month<=12;month++){
+    const {lines}=window.makeQuickSajuSummary(chart,2026,month,{direction:'정면',accessory:'아이폰 사용자'});
+    assert.equal(lines.length,20);
+    assert.doesNotMatch(lines.map(item=>item.text).join(' '),/십성|재성|정관|편관|정재|편재|비견|겁재|식신|상관|편인|정인|일간|일지|[甲乙丙丁戊己庚辛壬癸子丑寅卯辰巳午未申酉戌亥]/);
+  }
+});
