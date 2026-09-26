@@ -45,3 +45,4 @@
 .report-table td:nth-child(3),.report-table td:nth-child(4),.report-table td:nth-child(5){white-space:nowrap;color:#4f684e;font-weight:700;letter-spacing:.02em}
 .report-table td:last-child{min-width:220px}
 @media(max-width:600px){.report-card{padding:19px}.report-card p,.report-card li{font-size:13px}.report-table{font-size:11px;min-width:675px}}
+.jump-to-reading{display:inline-flex;margin-top:8px;padding:8px 13px;background:#e9eddd;border:1px solid #9fad8d;border-radius:4px;color:#405b46;font-size:12px;font-weight:700}
