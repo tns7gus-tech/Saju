@@ -49,7 +49,7 @@
     const head=$('manseHeader');head.replaceChildren();
     const year=Number(input.date.slice(0,4)), now=new Date().getFullYear();
     const age=now-year+1;
-    put(head,'strong','',`나의 만세력${age>0?` (${now}년 기준 세는나이 ${age}세)`:''}`);
+    put(head,'strong','',`${input.nickname||'나의'} 만세력${age>0?` (${now}년 기준 세는나이 ${age}세)`:''}`);
     put(head,'span','',`${input.calendar==='lunar'?'음력':'양력'} ${input.date} · ${input.time||'출생 시각 미입력'}${input.calendar==='lunar'?` · 양력 환산 ${chart.solarDate}`:''}`);
     const grid=$('pillars');grid.replaceChildren();
     for(const p of pillars.slice().reverse())column(grid,p.name,p.hanja,day,{reading:true,isDay:p.name==='일주',hidden:p.hiddenStems,naYin:p.naYin});
