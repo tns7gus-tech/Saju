@@ -36,16 +36,20 @@ test('all short summaries use everyday Korean instead of unexplained chart label
   }
 });
 
-test('changing month changes the substance of every category, not just its heading',()=>{
+test('changing month changes all 18 reading lines, not just the heading',()=>{
   const chart=window.calculateStaticManse({calendar:'solar',date:'950228',time:'1245',gender:'male',leapMonth:false,relationshipStatus:'single'});
   const game={direction:'정면',accessory:'아이폰 사용자'};
   for(let month=1;month<12;month++){
     const before=window.makeQuickSajuSummary(chart,2026,month,game).lines;
     const after=window.makeQuickSajuSummary(chart,2026,month+1,game).lines;
+    for(let i=0;i<18;i++)assert.notEqual(before[i].text,after[i].text,`${month}월에서 ${month+1}월 사이 ${i+1}번째 문장이 반복됨`);
     for(let section=0;section<6;section++){
       const current=before.slice(section*3,section*3+3).map(x=>x.text).join(' ');
       const next=after.slice(section*3,section*3+3).map(x=>x.text).join(' ');
       assert.notEqual(current,next,`${month}월에서 ${month+1}월 사이 ${before[section*3].category} 내용이 반복됨`);
     }
   }
+  const december=window.makeQuickSajuSummary(chart,2026,12,game).lines;
+  const january=window.makeQuickSajuSummary(chart,2027,1,game).lines;
+  for(let i=0;i<18;i++)assert.notEqual(december[i].text,january[i].text,`12월에서 다음 해 1월 사이 ${i+1}번째 문장이 반복됨`);
 });
