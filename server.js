@@ -25,6 +25,7 @@ const freeDay = Number(process.env.FREE_WEEKDAY ?? 3); // 0 Sunday, 3 Wednesday,
 const validDay = Number.isInteger(freeDay) && freeDay >= 0 && freeDay <= 6 ? freeDay : 3;
 const csrfOrigin = process.env.PUBLIC_ORIGIN || '';
 const secureCookie = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+const loginAttempts = new Map();
 const mime = { '.html':'text/html; charset=utf-8', '.js':'text/javascript; charset=utf-8', '.css':'text/css; charset=utf-8', '.svg':'image/svg+xml', '.png':'image/png', '.ico':'image/x-icon' };
 const randomId = () => crypto.randomBytes(18).toString('hex');
 const hash = v => crypto.createHash('sha256').update(v).digest('hex');
@@ -44,6 +45,14 @@ function getSession(req, res) {
   }
   return record;
 }
+function rotateSession(res, oldSession, userId=null) {
+  db.prepare('DELETE FROM sessions WHERE token_hash=?').run(oldSession.token_hash);
+  const token=crypto.randomBytes(32).toString('hex');
+  const record={token_hash:hash(token),user_id:userId};
+  db.prepare('INSERT INTO sessions VALUES (?,?,?,?)').run(record.token_hash,userId,now(),new Date(Date.now()+30*86400000).toISOString());
+  res.setHeader('Set-Cookie',`saju_session=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=2592000${secureCookie}`);
+  return record;
+}
 const userOf = session => session.user_id ? db.prepare('SELECT id,email,code,credits FROM users WHERE id=?').get(session.user_id) : null;
 function canRead(user) { return !!user && (isFreeKST() || !!db.prepare('SELECT 1 FROM access_grants WHERE user_id=? AND expires_at>?').get(user.id,now())); }
 function view(user) {
@@ -51,14 +60,29 @@ function view(user) {
     freeToday:isFreeKST(), freeWeekday:validDay, canRead:canRead(user), demo:!process.env.OPENAI_API_KEY };
 }
 async function body(req, limit=7_000_000) {
-  let raw=''; for await (const chunk of req) {raw+=chunk; if(raw.length>limit) throw Object.assign(new Error('이미지는 4MB 이하로 올려주세요.'),{status:413});}
+  let raw='', bytes=0; for await (const chunk of req) {bytes+=chunk.length;if(bytes>limit) throw Object.assign(new Error('요청 크기를 줄여주세요.'),{status:413});raw+=chunk;}
   try{return JSON.parse(raw || '{}');}catch{throw Object.assign(new Error('요청 형식이 올바르지 않습니다.'),{status:400});}
 }
 const bad = (message,status=400) => {throw Object.assign(new Error(message),{status});};
 function verifyOrigin(req) {
+  if(req.headers['sec-fetch-site']==='cross-site') bad('다른 사이트에서 보낸 요청은 처리하지 않습니다.',403);
   const origin=req.headers.origin; if (!origin) return;
-  const host=`${req.headers['x-forwarded-proto']==='https'?'https': 'http'}://${req.headers.host}`;
+  const host=`${req.socket.encrypted?'https':'http'}://${req.headers.host}`;
   if (origin !== host && origin !== csrfOrigin) bad('다른 사이트에서 보낸 요청은 처리하지 않습니다.',403);
+}
+function requireJson(req) {
+  if(!/^application\/json(?:\s*;|\s*$)/i.test(req.headers['content-type']||'')) bad('JSON 요청만 처리합니다.',415);
+}
+function checkLoginLimit(req,email) {
+  const key=hash(`${req.socket.remoteAddress||''}:${email}`);
+  const entry=loginAttempts.get(key);
+  if(entry && entry.until>Date.now() && entry.count>=5) bad('로그인 시도가 많습니다. 잠시 후 다시 시도해주세요.',429);
+  if(!entry || entry.until<=Date.now())loginAttempts.set(key,{count:0,until:Date.now()+15*60_000});
+  if(loginAttempts.size>5000){
+    for(const [k,v] of loginAttempts)if(v.until<=Date.now())loginAttempts.delete(k);
+    while(loginAttempts.size>5000)loginAttempts.delete(loginAttempts.keys().next().value);
+  }
+  return key;
 }
 function passwordHash(password,salt=crypto.randomBytes(16).toString('hex')) {return `${salt}:${crypto.scryptSync(password,salt,64).toString('hex')}`;}
 function passwordMatches(password, saved) {const [salt,value]=saved.split(':');return crypto.timingSafeEqual(Buffer.from(value,'hex'),Buffer.from(passwordHash(password,salt).split(':')[1],'hex'));}
@@ -87,6 +111,7 @@ async function api(req,res,url) {
   }
   if(req.method!=='POST') bad('지원하지 않는 요청입니다.',405);
   verifyOrigin(req);
+  requireJson(req);
   const b=await body(req);
   if(url.pathname==='/api/register') {
     const email=String(b.email||'').trim().toLowerCase(), password=String(b.password||'');
@@ -95,8 +120,8 @@ async function api(req,res,url) {
     const id=randomId(), code=crypto.randomBytes(5).toString('hex').toUpperCase();
     const inviter=String(b.ref||'').trim().toUpperCase(); const parent=inviter ? db.prepare('SELECT id FROM users WHERE code=?').get(inviter) : null;
     db.prepare('INSERT INTO users VALUES (?,?,?,?,?,?,?)').run(id,email,passwordHash(password),code,parent?.id||null,0,now());
-    db.prepare('UPDATE sessions SET user_id=? WHERE token_hash=?').run(id,session.token_hash);
     db.prepare('UPDATE analyses SET user_id=? WHERE session_hash=? AND user_id IS NULL').run(id,session.token_hash);
+    rotateSession(res,session,id);
     // Count one actual registered account once; do not count visits, links, or a user's own code.
     if(parent && parent.id!==id) {
       db.prepare('INSERT INTO referrals VALUES (?,?,?)').run(id,parent.id,now());
@@ -107,13 +132,21 @@ async function api(req,res,url) {
     event('registered',id);return json(res,201,view(userOf({...session,user_id:id})));
   }
   if(url.pathname==='/api/login') {
-    const found=db.prepare('SELECT * FROM users WHERE email=?').get(String(b.email||'').trim().toLowerCase());
-    if(!found || !passwordMatches(String(b.password||''),found.password)) bad('이메일 또는 비밀번호를 확인해주세요.',401);
-    db.prepare('UPDATE sessions SET user_id=? WHERE token_hash=?').run(found.id,session.token_hash);
+    const email=String(b.email||'').trim().toLowerCase();
+    const password=String(b.password||'');
+    if(email.length>200 || password.length>128) bad('이메일 또는 비밀번호를 확인해주세요.',401);
+    const key=checkLoginLimit(req,email);
+    const found=db.prepare('SELECT * FROM users WHERE email=?').get(email);
+    if(!found || !passwordMatches(password,found.password)){
+      loginAttempts.get(key).count++;
+      bad('이메일 또는 비밀번호를 확인해주세요.',401);
+    }
+    loginAttempts.delete(key);
     db.prepare('UPDATE analyses SET user_id=? WHERE session_hash=? AND user_id IS NULL').run(found.id,session.token_hash);
+    rotateSession(res,session,found.id);
     event('login',found.id);return json(res,200,view(userOf({...session,user_id:found.id})));
   }
-  if(url.pathname==='/api/logout') { db.prepare('UPDATE sessions SET user_id=NULL WHERE token_hash=?').run(session.token_hash); return json(res,200,view(null)); }
+  if(url.pathname==='/api/logout') { rotateSession(res,session); return json(res,200,view(null)); }
   if(url.pathname==='/api/manse') {
     const count=db.prepare('SELECT count(*) n FROM analyses WHERE session_hash=? AND created_at>?').get(session.token_hash,new Date(Date.now()-86400000).toISOString()).n;
     if(count>=20) bad('하루 계산 횟수에 도달했습니다. 내일 다시 이용해주세요.',429);
