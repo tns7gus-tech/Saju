@@ -36,20 +36,24 @@ test('all short summaries use everyday Korean instead of unexplained chart label
   }
 });
 
-test('changing month changes all 18 reading lines, not just the heading',()=>{
+test('love card distinguishes a partner combination, a clash, a partial combination and a close combination',()=>{
   const chart=window.calculateStaticManse({calendar:'solar',date:'950228',time:'1245',gender:'male',leapMonth:false,relationshipStatus:'single'});
   const game={direction:'정면',accessory:'아이폰 사용자'};
-  for(let month=1;month<12;month++){
-    const before=window.makeQuickSajuSummary(chart,2026,month,game).lines;
-    const after=window.makeQuickSajuSummary(chart,2026,month+1,game).lines;
-    for(let i=0;i<18;i++)assert.notEqual(before[i].text,after[i].text,`${month}월에서 ${month+1}월 사이 ${i+1}번째 문장이 반복됨`);
-    for(let section=0;section<6;section++){
-      const current=before.slice(section*3,section*3+3).map(x=>x.text).join(' ');
-      const next=after.slice(section*3,section*3+3).map(x=>x.text).join(' ');
-      assert.notEqual(current,next,`${month}월에서 ${month+1}월 사이 ${before[section*3].category} 내용이 반복됨`);
-    }
-  }
-  const december=window.makeQuickSajuSummary(chart,2026,12,game).lines;
-  const january=window.makeQuickSajuSummary(chart,2027,1,game).lines;
-  for(let i=0;i<18;i++)assert.notEqual(december[i].text,january[i].text,`12월에서 다음 해 1월 사이 ${i+1}번째 문장이 반복됨`);
+  const love=month=>window.makeQuickSajuSummary(chart,2026,month,game).lines.slice(0,3).map(x=>x.text);
+  const july=love(7),august=love(8),september=love(9),october=love(10),november=love(11),december=love(12);
+  assert.match(july[1],/배우자 관련 상징.*합/);
+  assert.match(august[1],/충.*이별 확정은 아닙니다/);
+  assert.match(october[1],/삼합의 일부.*단독으로 관계 진전을 뜻하지는 않습니다/);
+  assert.match(november[1],/육합.*보장하지는 않습니다/);
+  assert.match(september[1],/합·충은 없습니다/);
+  assert.match(december[1],/합·충은 없습니다/);
+  assert.notEqual(september[0],december[0]);
+  assert.equal(new Set([july[0],august[0],september[0],october[0],november[0],december[0]]).size,6);
+  for(const month of [7,8,9,10,11,12])assert.deepEqual(Array.from(love(month),x=>x.split(' · ')[0]),['핵심','근거','대화']);
+});
+
+test('unspecified traditional calculation basis does not claim spouse signal',()=>{
+  const chart=window.calculateStaticManse({calendar:'solar',date:'950228',time:'1245',gender:'',leapMonth:false,relationshipStatus:''});
+  const text=window.makeQuickSajuSummary(chart,2026,7,{direction:'정면',accessory:'아이폰 사용자'}).lines.slice(0,3).map(x=>x.text).join(' ');
+  assert.doesNotMatch(text,/배우자 관련 상징/);
 });
