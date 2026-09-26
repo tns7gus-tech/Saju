@@ -42,7 +42,7 @@
         meeting++;commitment++;evidence.push(`대운 ${p.ganZhi}의 천간에 배우자성 포함`);
       }
     }
-    return {year,month,gz,day,god,meeting:clamp(meeting),commitment:clamp(commitment),change:clamp(change),partner,stemJoin,branchJoin,clash,evidence};
+    return {year,month,gz,day,god,meeting:clamp(meeting),commitment:clamp(commitment),change:clamp(change),partner,newConnection,stemJoin,branchJoin,clash,trine,evidence};
   }
   const luckAt=(c,y)=>c.luck?.periods.find(p=>p.startYear<=y&&y<=p.endYear);
   function scenario(t,status){
