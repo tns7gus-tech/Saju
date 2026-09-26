@@ -72,6 +72,14 @@
       add(card,'h3','',section.title);
       add(card,'span','report-confidence','판독 수준 · '+section.confidence);
       for(const paragraph of section.paragraphs)add(card,'p','',paragraph);
+      if(section.table){
+        const scroll=add(card,'div','report-table-scroll','');
+        const table=add(scroll,'table','report-table','');
+        const head=add(table,'thead','',''),headRow=add(head,'tr','','');
+        for(const label of section.table.headers)add(headRow,'th','',label);
+        const body=add(table,'tbody','','');
+        for(const cells of section.table.rows){const row=add(body,'tr','','');for(const value of cells)add(row,'td','',value);}
+      }
       if(section.items.length){const list=add(card,'ol','', '');for(const item of section.items)add(list,'li','',item);}
     }
     $('question').textContent=topics[dayElement];
@@ -83,7 +91,7 @@
   let current=null;
   form.addEventListener('submit',event=>{
     event.preventDefault();$('error').textContent='';
-    try { current=calculate({calendar:form.elements.calendar.value,date:form.elements.date.value,time:form.elements.time.value,gender:form.elements.gender.value,leapMonth:form.elements.leapMonth.checked,nickname:form.elements.nickname.value.trim()});render(current); }
+    try { current=calculate({calendar:form.elements.calendar.value,date:form.elements.date.value,time:form.elements.time.value,gender:form.elements.gender.value,leapMonth:form.elements.leapMonth.checked,nickname:form.elements.nickname.value.trim(),relationshipStatus:form.elements.relationshipStatus.value});render(current); }
     catch(err){ $('output').hidden=true; current=null; $('error').textContent=err.message; }
   });
   document.querySelectorAll('[data-question]').forEach(button=>button.addEventListener('click',async()=>{
