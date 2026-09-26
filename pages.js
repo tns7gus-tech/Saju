@@ -128,19 +128,23 @@
   const budgetChecks=['모임비','교통비','식비','구독료','취미 지출','선물 비용','휴가 비용','생활용품비','배달 비용','교육비','통신비','연말 지출'];
   const workChecks=['이번 달 목표','협업 방식','마감 일정','새로 배울 일','업무 우선순위','회의 시간','집중 시간','반복 업무','휴가 계획','업무 분담','올해 성과','다음 달 준비'];
   const restChecks=['수면 시간','식사 리듬','산책 시간','쉬는 날','밤 약속 수','화면 보는 시간','물 마시는 습관','늦은 식사','운동 뒤 휴식','주말 일정','스트레스 해소법','연말 피로'];
+  const loveChecks=['첫인상','좋아하는 음식','쉬는 날 취향','연락 취향','영화 취향','음악 취향','여행 방식','대화 시작','데이트 장소','새로운 취미','친구와의 시간','올해의 기억'];
+  const marriageChecks=['생활비','가사 분담','주말 생활','가족 행사','퇴근 후 시간','저축 계획','휴가 방식','집안일','함께 살 집','친구 모임','명절 일정','장기 계획'];
+  const partnerChecks=['연락 시간','혼자만의 시간','모임 빈도','취미 시간','약속 조율','돈 쓰는 방식','휴일 사용','갈등 대화','만남 빈도','일과 데이트','가족과의 거리','연말 계획'];
   function makeQuickSummary(chart,year,month,game){
     const t=window.sajuRelationshipTransit(chart,year,month);
     const label=`${year}년 ${month}월`;
     const meeting=t.meeting>=4, commitment=t.commitment>=4, change=t.change>=4;
+    const ix=(month-1)%12, other=(ix+6)%12;
     const [love,marriage,partner,money,work,health]=monthLens[t.god]||monthLens.default;
     const relation=t.branchJoin?'서로 가까워지는 이야기를 꺼내볼 소재가 있어요.':t.clash?'관계나 생활 방식이 바뀔 때 서로의 뜻을 확인해보세요.':t.stemJoin?'서로의 관심사를 연결할 대화를 시도해보세요.':'가벼운 질문에서 시작해 상대의 반응을 살펴보세요.';
     const categories=[
-      ['연애',meeting?'새로운 대화를 시도할 단서가 비교적 많은 달이에요.':'새 인연을 단정하기보다 대화의 속도를 살펴보세요.',love,relation],
-      ['결혼',commitment?'미래 계획을 말로 맞춰볼 소재가 있는 달이에요.':'결혼 시기보다 서로의 준비를 확인하는 달로 써보세요.',marriage,t.branchJoin?'함께 살 때의 생활 모습을 구체적으로 물어보세요.':t.clash?'큰 결정 전에 주거와 일의 변화를 함께 확인해보세요.':`이번 달에는 ${budgetChecks[(month-1)%12]}에 대한 생각도 나눠보세요.`],
-      ['연인',change?'생활 방식이나 연락 빈도가 달라질 때 대화가 필요해요.':'서로 지키기 쉬운 약속을 맞춰보세요.',partner,t.clash?'평소와 다른 선택을 앞뒀다면 두 사람의 뜻을 확인해보세요.':`서로의 ${workChecks[(month-1)%12]} 때문에 만나는 시간이 달라지는지 물어보세요.`],
-      ['자산·소비',/재/.test(t.god)?'수입과 지출의 균형을 대화 소재로 삼아보세요.':'큰 지출 전 예산을 살펴보세요.',money,`이번 달에는 ${budgetChecks[(month-1)%12]}부터 점검해보세요.`],
-      ['일·사업',/관|식|상/.test(t.god)?'일의 역할과 표현 방식을 점검해보세요.':'지금 맡은 일에서 바꾸고 싶은 것을 골라보세요.',work,`이번 달에는 ${workChecks[(month-1)%12]}을 한 가지 정해보세요.`],
-      ['건강·컨디션',health,`이번 달에는 ${restChecks[(month-1)%12]} 항목을 살펴보세요.`,`다음 일정 전 ${restChecks[(month+2)%12]} 항목도 점검해보세요.`]
+      ['연애',`${meeting?'새로운 대화를 시도할 단서가 비교적 많아요.':'새 인연을 단정하기보다 속도를 살펴보세요.'} 이번에는 ${loveChecks[ix]} 이야기를 꺼내보세요.`,love,`${relation} ${loveChecks[other]}에 관한 질문도 해보세요.`],
+      ['결혼',`${commitment?'미래 계획을 말로 맞춰볼 소재가 있어요.':'결혼 시기보다 서로의 준비를 확인해보세요.'} ${marriageChecks[ix]}부터 이야기해보세요.`,marriage,`${t.branchJoin?'함께 살 때의 모습을 그려보세요.':t.clash?'큰 결정 전 생활의 변화를 확인해보세요.':'각자의 속도를 맞춰보세요.'} ${marriageChecks[other]}도 빼놓지 마세요.`],
+      ['연인',`${change?'생활 방식이 달라질 때 대화가 필요해요.':'서로 지키기 쉬운 약속을 맞춰보세요.'} ${partnerChecks[ix]}부터 확인해보세요.`,partner,`${t.clash?'평소와 다른 선택이라면 서로의 뜻을 물어보세요.':'상대의 생각을 직접 확인해보세요.'} ${partnerChecks[other]}도 함께 이야기해보세요.`],
+      ['자산·소비',`${/재/.test(t.god)?'수입과 지출의 균형을 점검해보세요.':'큰 지출 전 예산을 살펴보세요.'} 이번 점검 항목은 ${budgetChecks[ix]}입니다.`,money,`${budgetChecks[other]}도 꼭 쓸 돈과 선택해서 쓸 돈으로 나눠보세요.`],
+      ['일·사업',`${/관|식|상/.test(t.god)?'일의 역할과 표현 방식을 살펴보세요.':'지금 맡은 일에서 바꾸고 싶은 것을 골라보세요.'} 이번 주제는 ${workChecks[ix]}입니다.`,work,`${workChecks[other]}에 관해 함께 일하는 사람과 기대를 맞춰보세요.`],
+      ['건강·컨디션',health,`이번 달에는 ${restChecks[ix]} 항목을 살펴보세요.`,`다음 일정 전 ${restChecks[other]} 항목도 점검해보세요.`]
     ];
     const lines=[];
     for(const [category,...sentences] of categories)for(const sentence of sentences)lines.push({category,text:sentence});
@@ -150,10 +154,16 @@
   }
   let current=null;
   let gameTurn=0;
+  let lastSummary=null;
   function showQuickSummary(){
     if(!current)return;
     const [year,month]=$('summaryMonth').value.split('-').map(Number);
     const {label,lines}=makeQuickSummary(current,year,month,gameCards(year,month,gameTurn));
+    if(lastSummary&&lastSummary.label!==label){
+      const changed=lines.filter((line,i)=>line.text!==lastSummary.lines[i]?.text).length;
+      $('monthChange').textContent=`${lastSummary.label} → ${label}: 20개 중 ${changed}개 문장이 달라졌어요.`;
+    }else if(!lastSummary){$('monthChange').textContent='다른 달을 고르면 아래 문장들이 새롭게 바뀝니다.';}
+    lastSummary={label,lines};
     $('quickTitle').textContent=`${label}, 한눈에 20줄`;
     const list=$('quickSummary');list.replaceChildren();
     list.setAttribute('aria-label',`${label} 요약 20줄`);
@@ -165,7 +175,7 @@
   $('closeDetails').addEventListener('click',()=>dialog.close());
   dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.close();});
   $('summaryMonth').addEventListener('change',()=>{gameTurn=0;showQuickSummary();});
-  $('rerollGame').addEventListener('click',()=>{gameTurn++;showQuickSummary();});
+  $('rerollGame').addEventListener('click',()=>{gameTurn++;showQuickSummary();$('monthChange').textContent='자리 게임 질문을 다시 뽑았습니다.';});
   function renderReport(chart,year,month){
     const report=$('report');report.replaceChildren();
     if (!window.makeSajuReport) throw new Error('분석 규칙 파일을 불러오지 못했습니다. 새로고침해주세요.');
@@ -199,7 +209,7 @@
       const index=year*12+(month-1)+offset,ym=Math.floor(index/12),mm=index%12+1;
       const option=add(monthSelect,'option','',`${ym}년 ${mm}월`);option.value=`${ym}-${mm}`;
     }
-    gameTurn=0;showQuickSummary();
+    gameTurn=0;lastSummary=null;showQuickSummary();
     $('output').hidden=false;
     $('output').scrollIntoView({behavior:'smooth',block:'start'});
   }
