@@ -31,3 +31,17 @@
 .fortune-section{padding:21px 12px 23px;border-top:3px solid #e5e5e5}.fortune-section h3{text-align:center;font-size:21px;line-height:1.35;margin:0 0 5px}.fortune-note{text-align:center;font-size:11px;color:#657166;margin:3px 0 14px;line-height:1.6}
 .fortune-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}.fortune-grid .manse-col{font-size:12px}.fortune-grid .manse-col-heading{background:transparent;font-size:12px;font-weight:700;min-height:38px;padding:7px 0}.fortune-grid .manse-god,.fortune-grid .manse-branch-god{font-size:11px;min-height:24px;padding:3px 0}.fortune-grid .manse-glyph{padding:1px;gap:2px}.fortune-grid .manse-tile{font-size:32px;min-height:51px;border-width:2px}.fortune-grid .manse-extra{font-size:11px;min-height:22px;padding:3px 0}
 @media(max-width:600px){.manse-header{padding:14px}.manse-header strong{font-size:19px}.manse-header span{font-size:12px}.manse-col{font-size:12px}.manse-col-heading{font-size:13px;min-height:33px;padding:6px 0}.manse-reading{font-size:11px}.manse-god,.manse-branch-god{font-size:11px;min-height:27px}.manse-glyph{gap:2px;padding:1px 2px}.manse-tile{min-height:49px;font-size:34px;border-width:2px}.manse-extra{font-size:10px;min-height:27px}.manse-summary{font-size:12px}.fortune-section{padding:16px 5px}.fortune-section h3{font-size:18px}.fortune-grid{gap:1px}.fortune-grid .manse-col-heading{font-size:9px;min-height:34px}.fortune-grid .manse-god,.fortune-grid .manse-branch-god,.fortune-grid .manse-extra{font-size:9px}.fortune-grid .manse-tile{font-size:24px;min-height:36px;border-width:1px}.fortune-grid .manse-glyph{padding:1px 0}.output{padding:14px}}
+
+/* Explainable relationship report with month and year comparisons. */
+.report{grid-template-columns:minmax(0,1fr)}
+.report-card{padding:28px 30px}
+.report-card:nth-child(2),.report-card:nth-child(4){background:#f7f8f2}
+.report-card p,.report-card li{font-size:14px;line-height:1.9}
+.report-table-scroll{overflow-x:auto;margin:15px -2px 5px}
+.report-table{width:100%;border-collapse:collapse;min-width:690px;font-size:12px;line-height:1.5}
+.report-table th{background:#405b46;color:#fff;text-align:left;padding:11px 9px;white-space:nowrap}
+.report-table td{border-bottom:1px solid #dce2d7;padding:10px 9px;vertical-align:top}
+.report-table tbody tr:nth-child(even){background:#f0f3ea}
+.report-table td:nth-child(3),.report-table td:nth-child(4),.report-table td:nth-child(5){white-space:nowrap;color:#4f684e;font-weight:700;letter-spacing:.02em}
+.report-table td:last-child{min-width:220px}
+@media(max-width:600px){.report-card{padding:19px}.report-card p,.report-card li{font-size:13px}.report-table{font-size:11px;min-width:675px}}
