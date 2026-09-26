@@ -6,7 +6,7 @@
 
 ## GitHub Pages 정적 체험판
 
-저장소 루트의 `index.html`, `pages.css`, `pages.js`는 브라우저에서 계산하는 공개 체험판입니다. GitHub 저장소 **Settings → Pages → Build and deployment → Deploy from a branch → main / (root) → Save**를 선택하면 `https://tns7gus-tech.github.io/Saju/`에서 볼 수 있습니다. GitHub의 반영 시간은 최대 10분 정도 걸릴 수 있습니다. 양력·음력/윤달 날짜, 네 기둥, 보이는 오행, 조건을 채웠을 때의 대운 배열, 대화 질문, PNG 저장을 체험할 수 있습니다. 출생 정보는 서버로 보내지 않으며 달력 계산 스크립트는 `lunar-javascript@1.7.7`을 CDN에서 로드하므로 첫 방문 때 네트워크 연결이 필요합니다.
+저장소 루트의 `index.html`, `pages.css`, `pages.js`, `reading-rules.js`는 브라우저에서 계산하는 공개 체험판입니다. GitHub 저장소 **Settings → Pages → Build and deployment → Deploy from a branch → main / (root) → Save**를 선택하면 `https://tns7gus-tech.github.io/Saju/`에서 볼 수 있습니다. GitHub의 반영 시간은 최대 10분 정도 걸릴 수 있습니다. 양력·음력/윤달 날짜, 네 기둥, 보이는 오행, 조건을 채웠을 때의 대운 배열, 계산 근거를 표시한 12개 항목의 규칙형 분석, 대화 질문, PNG 저장을 체험할 수 있습니다. 분석은 출생정보에 맞춰 글자와 관계를 대조한 기본형이며 사건·질병·수익·결혼 시기를 예측하는 유료 상담 수준의 완성형이 아닙니다. 출생 정보는 서버로 보내지 않으며 달력 계산 스크립트는 `lunar-javascript@1.7.7`을 CDN에서 로드하므로 첫 방문 때 네트워크 연결이 필요합니다.
 
 GitHub Pages는 정적 파일만 제공하므로 아래 Node 서버의 회원가입·요일별 무료 이용·추천인 보상·캡처 AI 분석은 여기에서 동작하지 않습니다. 전체 서비스를 공개하려면 별도 서버 호스팅과 운영 준비가 필요합니다.
 
