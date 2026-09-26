@@ -116,3 +116,5 @@
 :root[data-theme=dark] .summary-controls select,:root[data-theme=dark] .detail-close{background:#253329;color:#edf2e9;border-color:#69826a}
 :root[data-theme=dark] .summary-reroll{color:#edf2e9;border-color:#69826a}
 :root[data-theme=dark] .detail-dialog-head{border-color:#465649}
+.term-help{background:#eef2e9;border-left:3px solid #819975;padding:14px 18px;line-height:1.75;font-size:calc(13px + 1pt);word-break:keep-all}
+:root[data-theme=dark] .term-help{background:#293b2f;color:#e5ede3}
