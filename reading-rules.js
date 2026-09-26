@@ -86,11 +86,11 @@
     }));
     const all=[...months];for(let y=now.year+1;y<=now.year+2;y++)for(let m=1;m<=12;m++)all.push(transit(chart,y,m));
     const rank=(metric)=>[...all].sort((a,b)=>b[metric]-a[metric]||a.year-b.year||a.month-b.month).slice(0,5).map(t=>`${t.year}년 ${t.month}월 ${t.gz} ${stars(t[metric])} (${t.evidence.slice(1).join(' / ')||t.evidence[0]})`);
-    add('6. 만남·결혼 논의·관계 점검 TOP 5','동점 시 빠른 달부터',[
+    add('6. 관계 흐름 비교 TOP 5','지난 달 포함 · 동점 시 빠른 달부터',[
       `만남·연애: ${rank('meeting').join(' | ')}`,
       `결혼·공식화: ${rank('commitment').join(' | ')}`,
       `갈등·변화 점검: ${rank('change').join(' | ')}`,
-      'TOP 5는 명리 규칙의 상대 순위입니다. 특정 날짜의 실제 만남·혼인·이별이 일어날 확률 순위가 아닙니다.'
+      '지난 달도 비교를 위해 포함했습니다. TOP 5는 명리 규칙의 상대 순위이며, 특정 날짜의 실제 만남·혼인·이별이 일어날 확률 순위가 아닙니다.'
     ]);
     add('7. 현실적인 관계 전략','해석의 한계와 실제 선택',[
       '변동성이 큰 달·해에는 연락 빈도, 거리, 돈, 생활방식을 말로 확인하세요. 안정적인 관계라면 같은 변화가 이사나 결혼 논의로 나타날 수 있습니다.',
