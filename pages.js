@@ -104,6 +104,45 @@
   }
 
   const add = (parent,tag,cls,value) => { const el=document.createElement(tag); if(cls)el.className=cls; el.textContent=value; parent.append(el); return el; };
+  const seoulMonth=()=>{
+    const parts=new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Seoul',year:'numeric',month:'numeric'}).formatToParts(new Date());
+    return {year:Number(parts.find(p=>p.type==='year').value),month:Number(parts.find(p=>p.type==='month').value)};
+  };
+  const gameCards=()=>({direction:['왼쪽','오른쪽','정면','뒤쪽'][Math.floor(Math.random()*4)],accessory:['안경 쓴 사람','아이폰 사용자','갤럭시폰 사용자'][Math.floor(Math.random()*3)]});
+  function makeQuickSummary(chart,year,month,game){
+    const t=window.sajuRelationshipTransit(chart,year,month);
+    const label=`${year}년 ${month}월`;
+    const meeting=t.meeting>=4, commitment=t.commitment>=4, change=t.change>=4;
+    const categories=[
+      ['연애',meeting?'새로운 대화를 시작할 소재가 두드러져요.':'새 인연을 단정하기보다 취향을 물어보세요.',`명리 단서: ${t.evidence[0]}.`,'한마디: 먼저 가볍게 이야기할 약속을 잡아보세요.'],
+      ['결혼',commitment?'미래 계획을 말로 맞춰볼 만한 달이에요.':'결혼 시기보다 서로의 준비를 확인하세요.',`공식화 지표 ${t.commitment}/5 · 실제 혼인 가능성은 아닙니다.`,'한마디: 주거·돈·일정에 대한 생각을 나눠보세요.'],
+      ['연인',change?'생활 방식이나 연락 빈도를 확인할 때예요.':'서로 지키기 쉬운 약속부터 맞춰보세요.',t.clash?'일지 충이 있어 관계 변화의 소재가 됩니다.':'관계 변화가 이별을 뜻하지는 않습니다.','한마디: 상대의 의사는 직접 물어보세요.'],
+      ['자산·소비',/재/.test(t.god)?'재성 주제에 맞춰 수입과 지출을 점검해보세요.':'큰 지출 전에 이번 달 예산을 나눠보세요.',`이번 달 십성은 ${t.god} · 수익 예측값은 아닙니다.`,'한마디: 대화 중 돈 쓰는 취향을 물어보세요.'],
+      ['일·사업',/관|식|상/.test(t.god)?'일의 역할과 표현 방식을 점검해보세요.':'지금 맡은 일에서 바꾸고 싶은 것을 골라보세요.',`이번 달 십성 ${t.god}을 대화 소재로만 사용합니다.`,'한마디: 새로운 계획은 일정과 비용을 먼저 적어보세요.'],
+      ['건강·컨디션','사주만으로 몸 상태나 질환을 판정하지 않아요.','이번 달 수면·휴식·식사 리듬을 살펴보세요.','한마디: 무리한 일정이면 쉬는 시간을 먼저 확보하세요.']
+    ];
+    const lines=[];
+    for(const [category,...sentences] of categories)for(const sentence of sentences)lines.push({category,text:sentence});
+    lines.push({category:'자리 게임',text:`${game.direction} 자리에 앉은 사람과 취향 질문 한 번! 연인 여부는 직접 대화해보세요.`});
+    lines.push({category:'자리 게임',text:`${game.accessory}에게 좋아하는 데이트 코스를 물어보세요. 무작위 질문입니다.`});
+    return {label,lines};
+  }
+  let current=null;
+  let currentGame=gameCards();
+  function showQuickSummary(){
+    if(!current)return;
+    const [year,month]=$('summaryMonth').value.split('-').map(Number);
+    const {label,lines}=makeQuickSummary(current,year,month,currentGame);
+    const list=$('quickSummary');list.replaceChildren();
+    list.setAttribute('aria-label',`${label} 요약 20줄`);
+    for(const entry of lines){const item=add(list,'li','quick-line','');add(item,'strong','',entry.category);add(item,'span','',entry.text);}
+  }
+  const dialog=$('detailDialog');
+  $('openDetails').addEventListener('click',()=>{if(current)dialog.showModal();});
+  $('closeDetails').addEventListener('click',()=>dialog.close());
+  dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.close();});
+  $('summaryMonth').addEventListener('change',showQuickSummary);
+  $('rerollGame').addEventListener('click',()=>{currentGame=gameCards();showQuickSummary();});
   function render(chart) {
     const {input,solarDate,pillars,elements,luck,warnings,dayElement}=chart;
     $('chartMeta').textContent=`${input.calendar==='lunar'?'음력':'양력'} ${input.date}${input.leapMonth?' · 윤달':''} · 양력 환산 ${solarDate}${input.time?' · '+input.time:''}`;
@@ -130,12 +169,17 @@
       if(section.items.length){const list=add(card,'ol','', '');for(const item of section.items)add(list,'li','',item);}
     }
     $('question').textContent=topics[dayElement];
+    const {year,month}=seoulMonth(),monthSelect=$('summaryMonth');monthSelect.replaceChildren();
+    for(let offset=0;offset<12;offset++){
+      const index=year*12+(month-1)+offset,ym=Math.floor(index/12),mm=index%12+1;
+      const option=add(monthSelect,'option','',`${ym}년 ${mm}월`);option.value=`${ym}-${mm}`;
+    }
+    currentGame=gameCards();showQuickSummary();
     $('output').hidden=false;
     $('output').scrollIntoView({behavior:'smooth',block:'start'});
   }
 
   form.elements.calendar.addEventListener('change',()=>{$('leapField').hidden=form.elements.calendar.value!=='lunar'; if(form.elements.calendar.value!=='lunar')form.elements.leapMonth.checked=false;});
-  let current=null;
   form.addEventListener('submit',event=>{
     event.preventDefault();$('error').textContent='';
     for(const field of [form.elements.date,form.elements.time])field.removeAttribute('aria-invalid');
@@ -169,4 +213,5 @@
     const link=document.createElement('a');link.href=c.toDataURL('image/png');link.download='sai-manse.png';link.click();
   });
   window.calculateStaticManse=calculate;
+  window.makeQuickSajuSummary=makeQuickSummary;
 })();
