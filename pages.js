@@ -83,7 +83,7 @@
   let current=null;
   form.addEventListener('submit',event=>{
     event.preventDefault();$('error').textContent='';
-    try { current=calculate({calendar:form.elements.calendar.value,date:form.elements.date.value,time:form.elements.time.value,gender:form.elements.gender.value,leapMonth:form.elements.leapMonth.checked});render(current); }
+    try { current=calculate({calendar:form.elements.calendar.value,date:form.elements.date.value,time:form.elements.time.value,gender:form.elements.gender.value,leapMonth:form.elements.leapMonth.checked,nickname:form.elements.nickname.value.trim()});render(current); }
     catch(err){ $('output').hidden=true; current=null; $('error').textContent=err.message; }
   });
   document.querySelectorAll('[data-question]').forEach(button=>button.addEventListener('click',async()=>{
