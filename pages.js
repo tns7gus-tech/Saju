@@ -155,6 +155,8 @@
   let current=null;
   let gameTurn=0;
   let lastSummary=null;
+  let detailReturnFocus=null;
+  let topicGoingToDetails=false;
   const topicCards=[
     {name:'연애',short:'연애',art:'♡',accent:'rose'},
     {name:'결혼',short:'결혼',art:'◇',accent:'peach'},
@@ -176,12 +178,14 @@
     '만세력':'<rect x="8" y="11" width="48" height="43" rx="5"/><path d="M8 24h48M20 11v43m12-30v30m12-30v30M13 32h2m10 0h2m10 0h2m10 0h2M13 44h2m10 0h2m10 0h2m10 0h2"/>'
   };
   const topicDialog=$('topicDialog');
-  function openTopic(card,entries,label){
+  function openTopic(card,entries,label,opener){
     $('topicDialogMonth').textContent=label+' · 이번 달의 이야기';
     $('topicDialogTitle').textContent=card.name;
     const list=$('topicDialogList');list.replaceChildren();
     for(const entry of entries)add(list,'li','',entry.text);
+    detailReturnFocus=opener;
     topicDialog.showModal();
+    $('closeTopic').focus();
   }
   function showQuickSummary(){
     if(!current)return;
@@ -206,18 +210,20 @@
       art.setAttribute('aria-hidden','true');
       art.innerHTML=`<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" focusable="false">${topicIllustrations[card.name]}</svg>`;
       add(button,'span','topic-label',card.short);
-      if(index===7)button.addEventListener('click',()=>dialog.showModal());
-      else button.addEventListener('click',()=>openTopic(card,index===6?lines.slice(18):lines.slice(index*3,index*3+3),label));
+      if(index===7)button.addEventListener('click',()=>{detailReturnFocus=null;dialog.showModal();});
+      else button.addEventListener('click',()=>openTopic(card,index===6?lines.slice(18):lines.slice(index*3,index*3+3),label,button));
     }
     renderReport(current,year,month);
   }
   const dialog=$('detailDialog');
   $('closeTopic').addEventListener('click',()=>topicDialog.close());
   topicDialog.addEventListener('click',event=>{if(event.target===topicDialog)topicDialog.close();});
-  $('topicFullDetails').addEventListener('click',()=>{topicDialog.close();dialog.showModal();});
-  $('openDetails').addEventListener('click',()=>{if(current)dialog.showModal();});
+  topicDialog.addEventListener('close',()=>{if(!topicGoingToDetails)detailReturnFocus=null;});
+  $('topicFullDetails').addEventListener('click',()=>{topicGoingToDetails=true;topicDialog.close();dialog.showModal();});
+  $('openDetails').addEventListener('click',()=>{if(current){detailReturnFocus=null;dialog.showModal();}});
   $('closeDetails').addEventListener('click',()=>dialog.close());
   dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.close();});
+  dialog.addEventListener('close',()=>{topicGoingToDetails=false;if(detailReturnFocus?.isConnected)detailReturnFocus.focus();detailReturnFocus=null;});
   $('summaryMonth').addEventListener('change',()=>{gameTurn=0;showQuickSummary();});
   $('rerollGame').addEventListener('click',()=>{gameTurn++;showQuickSummary();$('monthChange').textContent='자리 게임 질문을 다시 뽑았습니다.';});
   function renderReport(chart,year,month){
@@ -230,9 +236,13 @@
       for(const paragraph of section.paragraphs)add(card,'p','',paragraph);
       if(section.table){
         const scroll=add(card,'div','report-table-scroll','');
+        scroll.setAttribute('role','region');
+        scroll.setAttribute('tabindex','0');
+        scroll.setAttribute('aria-label',section.title+' 표, 좌우로 스크롤 가능');
         const table=add(scroll,'table','report-table','');
+        add(table,'caption','',section.title+' 자세한 비교');
         const head=add(table,'thead','',''),headRow=add(head,'tr','','');
-        for(const label of section.table.headers)add(headRow,'th','',label);
+        for(const label of section.table.headers){const th=add(headRow,'th','',label);th.scope='col';}
         const body=add(table,'tbody','','');
         for(const cells of section.table.rows){const row=add(body,'tr','','');for(const value of cells)add(row,'td','',value);}
       }
@@ -255,7 +265,8 @@
     }
     gameTurn=0;lastSummary=null;showQuickSummary();
     $('output').hidden=false;
-    $('output').scrollIntoView({behavior:'smooth',block:'start'});
+    $('output').scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});
+    $('quickTitle').focus({preventScroll:true});
   }
 
   form.elements.calendar.addEventListener('change',()=>{$('leapField').hidden=form.elements.calendar.value!=='lunar'; if(form.elements.calendar.value!=='lunar')form.elements.leapMonth.checked=false;});
@@ -271,8 +282,8 @@
   });
   for(const field of [form.elements.date,form.elements.time])field.addEventListener('input',()=>{field.removeAttribute('aria-invalid');$('error').textContent='';});
   document.querySelectorAll('[data-question]').forEach(button=>button.addEventListener('click',async()=>{
-    try { await navigator.clipboard.writeText(button.dataset.question);button.textContent='복사 완료 ✓';setTimeout(()=>button.textContent='질문 복사 ↗',2000); }
-    catch { button.textContent='복사할 수 없습니다'; }
+    try { await navigator.clipboard.writeText(button.dataset.question);button.textContent='복사 완료 ✓';$('copyStatus').textContent='질문을 복사했습니다.';setTimeout(()=>button.textContent='질문 복사 ↗',2000); }
+    catch { button.textContent='복사할 수 없습니다';$('copyStatus').textContent='복사하지 못했습니다. 질문을 직접 선택해 복사해주세요.'; }
   }));
   $('savePng').addEventListener('click',()=>{
     if(!current)return;
