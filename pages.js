@@ -155,6 +155,34 @@
   let current=null;
   let gameTurn=0;
   let lastSummary=null;
+  const topicCards=[
+    {name:'연애',short:'연애',art:'♡',accent:'rose'},
+    {name:'결혼',short:'결혼',art:'◇',accent:'peach'},
+    {name:'연인',short:'연인',art:'♥',accent:'lavender'},
+    {name:'자산·소비',short:'돈·소비',art:'₩',accent:'gold'},
+    {name:'일·사업',short:'일·사업',art:'✦',accent:'mint'},
+    {name:'건강·컨디션',short:'건강',art:'✚',accent:'sky'},
+    {name:'자리 게임',short:'자리 게임',art:'♧',accent:'lime'},
+    {name:'만세력',short:'만세력',art:'四',accent:'ink'}
+  ];
+  const topicIllustrations={
+    '연애':'<path d="M32 54 13 35C1 23 16 7 29 18l3 3 3-3C48 7 63 23 51 35Z"/><path d="m47 8 2-5 2 5 5 2-5 2-2 5-2-5-5-2Z"/>',
+    '결혼':'<circle cx="22" cy="37" r="13"/><circle cx="42" cy="37" r="13"/><path d="m22 24 5-10h10l5 10M27 14l5 9 5-9"/>',
+    '연인':'<circle cx="22" cy="22" r="8"/><circle cx="43" cy="22" r="8"/><path d="M9 52c0-12 5-19 13-19s13 7 13 19M30 52c0-12 5-19 13-19s13 7 13 19M35 46l-5-6"/><path d="m32 17 3-4 3 4"/>',
+    '자산·소비':'<ellipse cx="32" cy="19" rx="19" ry="7"/><path d="M13 19v24c0 4 8 8 19 8s19-4 19-8V19M13 31c0 4 8 8 19 8s19-4 19-8"/><path d="M32 25v20m-8-13 8 13 8-13"/>',
+    '일·사업':'<rect x="9" y="21" width="46" height="32" rx="4"/><path d="M24 21v-7h16v7M9 34c9 7 37 7 46 0M27 35v9h10v-9"/>',
+    '건강·컨디션':'<path d="M32 55 13 36C1 24 16 8 29 19l3 3 3-3C48 8 63 24 51 36Z"/><path d="M14 34h10l5-8 6 17 5-9h10"/>',
+    '자리 게임':'<path d="M16 10v27h32V10M12 38h40v9H12zM19 47v8m26-8v8"/><circle cx="32" cy="23" r="6"/><path d="M32 13v4m0 12v4m-10-10h4m12 0h4"/>',
+    '만세력':'<rect x="8" y="11" width="48" height="43" rx="5"/><path d="M8 24h48M20 11v43m12-30v30m12-30v30M13 32h2m10 0h2m10 0h2m10 0h2M13 44h2m10 0h2m10 0h2m10 0h2"/>'
+  };
+  const topicDialog=$('topicDialog');
+  function openTopic(card,entries,label){
+    $('topicDialogMonth').textContent=label+' · 이번 달의 이야기';
+    $('topicDialogTitle').textContent=card.name;
+    const list=$('topicDialogList');list.replaceChildren();
+    for(const entry of entries)add(list,'li','',entry.text);
+    topicDialog.showModal();
+  }
   function showQuickSummary(){
     if(!current)return;
     const [year,month]=$('summaryMonth').value.split('-').map(Number);
@@ -164,13 +192,29 @@
       $('monthChange').textContent=`${lastSummary.label} → ${label}: 20개 중 ${changed}개 문장이 달라졌어요.`;
     }else if(!lastSummary){$('monthChange').textContent='다른 달을 고르면 아래 문장들이 새롭게 바뀝니다.';}
     lastSummary={label,lines};
-    $('quickTitle').textContent=`${label}, 한눈에 20줄`;
+    $('quickTitle').textContent=`${label}, 무엇이 궁금하세요?`;
     const list=$('quickSummary');list.replaceChildren();
-    list.setAttribute('aria-label',`${label} 요약 20줄`);
-    for(const entry of lines){const item=add(list,'li','quick-line','');add(item,'strong','',entry.category);add(item,'span','',entry.text);}
+    list.setAttribute('aria-label',`${label} 주제별 이야기 8개`);
+    for(let index=0;index<topicCards.length;index++){
+      const card=topicCards[index];
+      const button=add(list,'button',`topic-card topic-${card.accent}`,'');
+      button.type='button';
+      button.setAttribute('aria-haspopup','dialog');
+      button.setAttribute('aria-controls',index===7?'detailDialog':'topicDialog');
+      button.setAttribute('aria-label',`${card.name} 그림, 내용을 보려면 누르세요`);
+      const art=add(button,'span','topic-art','');
+      art.setAttribute('aria-hidden','true');
+      art.innerHTML=`<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" focusable="false">${topicIllustrations[card.name]}</svg>`;
+      add(button,'span','topic-label',card.short);
+      if(index===7)button.addEventListener('click',()=>dialog.showModal());
+      else button.addEventListener('click',()=>openTopic(card,index===6?lines.slice(18):lines.slice(index*3,index*3+3),label));
+    }
     renderReport(current,year,month);
   }
   const dialog=$('detailDialog');
+  $('closeTopic').addEventListener('click',()=>topicDialog.close());
+  topicDialog.addEventListener('click',event=>{if(event.target===topicDialog)topicDialog.close();});
+  $('topicFullDetails').addEventListener('click',()=>{topicDialog.close();dialog.showModal();});
   $('openDetails').addEventListener('click',()=>{if(current)dialog.showModal();});
   $('closeDetails').addEventListener('click',()=>dialog.close());
   dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.close();});
