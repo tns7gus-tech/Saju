@@ -133,9 +133,11 @@
     if(!current)return;
     const [year,month]=$('summaryMonth').value.split('-').map(Number);
     const {label,lines}=makeQuickSummary(current,year,month,currentGame);
+    $('quickTitle').textContent=`${label}, 한눈에 20줄`;
     const list=$('quickSummary');list.replaceChildren();
     list.setAttribute('aria-label',`${label} 요약 20줄`);
     for(const entry of lines){const item=add(list,'li','quick-line','');add(item,'strong','',entry.category);add(item,'span','',entry.text);}
+    renderReport(current,year,month);
   }
   const dialog=$('detailDialog');
   $('openDetails').addEventListener('click',()=>{if(current)dialog.showModal();});
@@ -143,17 +145,10 @@
   dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.close();});
   $('summaryMonth').addEventListener('change',showQuickSummary);
   $('rerollGame').addEventListener('click',()=>{currentGame=gameCards();showQuickSummary();});
-  function render(chart) {
-    const {input,solarDate,pillars,elements,luck,warnings,dayElement}=chart;
-    $('chartMeta').textContent=`${input.calendar==='lunar'?'음력':'양력'} ${input.date}${input.leapMonth?' · 윤달':''} · 양력 환산 ${solarDate}${input.time?' · '+input.time:''}`;
-    if(!window.renderVisualManse) throw new Error('만세력 표 파일을 불러오지 못했습니다. 새로고침해주세요.');
-    window.renderVisualManse(chart);
-    $('elements').textContent='보이는 글자 기준 오행 · '+Object.entries(elements).map(([e,n])=>`${e} ${n}`).join('  /  ');
-    $('luck').textContent=luck?`대운 ${luck.direction} · 출생 후 ${luck.start[0]}년 ${luck.start[1]}개월 ${luck.start[2]}일 시작 (대운수 약 ${luck.periods[0].startAge-1}세) · ${luck.periods.slice(0,5).map(p=>`${p.startYear}년 ${p.ganZhi}`).join(' → ')}`:'대운 · 출생 시각과 계산 기준 선택 시 표시';
-    $('warnings').textContent=warnings.join(' ');
+  function renderReport(chart,year,month){
     const report=$('report');report.replaceChildren();
     if (!window.makeSajuReport) throw new Error('분석 규칙 파일을 불러오지 못했습니다. 새로고침해주세요.');
-    for (const section of window.makeSajuReport(chart)) {
+    for (const section of window.makeSajuReport(chart,{year,month})) {
       const card=add(report,'section','report-card','');
       add(card,'h3','',section.title);
       add(card,'span','report-confidence','판독 수준 · '+section.confidence);
@@ -168,6 +163,15 @@
       }
       if(section.items.length){const list=add(card,'ol','', '');for(const item of section.items)add(list,'li','',item);}
     }
+  }
+  function render(chart) {
+    const {input,solarDate,elements,luck,warnings,dayElement}=chart;
+    $('chartMeta').textContent=`${input.calendar==='lunar'?'음력':'양력'} ${input.date}${input.leapMonth?' · 윤달':''} · 양력 환산 ${solarDate}${input.time?' · '+input.time:''}`;
+    if(!window.renderVisualManse) throw new Error('만세력 표 파일을 불러오지 못했습니다. 새로고침해주세요.');
+    window.renderVisualManse(chart);
+    $('elements').textContent='보이는 글자 기준 오행 · '+Object.entries(elements).map(([e,n])=>`${e} ${n}`).join('  /  ');
+    $('luck').textContent=luck?`대운 ${luck.direction} · 출생 후 ${luck.start[0]}년 ${luck.start[1]}개월 ${luck.start[2]}일 시작 (대운수 약 ${luck.periods[0].startAge-1}세) · ${luck.periods.slice(0,5).map(p=>`${p.startYear}년 ${p.ganZhi}`).join(' → ')}`:'대운 · 출생 시각과 계산 기준 선택 시 표시';
+    $('warnings').textContent=warnings.join(' ');
     $('question').textContent=topics[dayElement];
     const {year,month}=seoulMonth(),monthSelect=$('summaryMonth');monthSelect.replaceChildren();
     for(let offset=0;offset<12;offset++){
