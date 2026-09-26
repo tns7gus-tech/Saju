@@ -143,5 +143,46 @@
 :root[data-theme=dark] .detail-dialog-head{border-color:#465649}
 .term-help{background:#eef2e9;border-left:3px solid #819975;padding:14px 18px;line-height:1.75;font-size:calc(13px + 1pt);word-break:keep-all}
 :root[data-theme=dark] .term-help{background:#293b2f;color:#e5ede3}
+
+/* Navigation, reading contrast, touch size and small-screen reflow. */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.skip-link{position:absolute;left:12px;top:-90px;z-index:100;padding:10px 16px;border-radius:6px;background:#213b2b;color:#fff;font-weight:700}
+.skip-link:focus{top:12px}
+:where(a,button,input,select):focus-visible{outline:3px solid #245b39;outline-offset:3px}
+:root[data-theme=dark] :where(a,button,input,select):focus-visible{outline-color:#d6efab}
+.brand small,.nav nav,.hero-copy>p,.section-head>p,.form-note,.muted,.steps small,.output-top p,.summary-note,footer p,footer>span:last-child{color:#4b5d4e}
+.kicker,.form-eyebrow,.question-grid span,.report-confidence,.fortune-note,.manse-summary small{color:#48613c}
+.topic-label{white-space:normal;overflow-wrap:anywhere;min-height:35px;display:grid;place-items:center}
+.topic-card{min-height:44px}
+.summary-actions .button,.summary-actions .summary-reroll,.question-grid button,.save{min-height:44px}
+.report-table caption{font-weight:700;text-align:left;padding:6px 0;color:var(--ink)}
+.report-table-scroll{scrollbar-width:thin}
+.topic-dialog,.detail-dialog{overscroll-behavior:contain}
+@media(max-width:800px){
+  .nav{height:auto;min-height:72px;flex-wrap:wrap;gap:6px 16px;padding-block:9px}
+  .nav nav{display:flex;order:3;flex:0 0 100%;justify-content:center;gap:clamp(10px,4vw,28px);margin:0;line-height:1.3}
+  .nav nav a{padding:10px 2px;min-height:44px;display:inline-flex;align-items:center}
+  .nav-cta{margin-left:auto}
+}
+@media(max-width:600px){
+  .nav{padding:8px 16px}
+  .nav nav{font-size:calc(12px + 1pt)}
+  .hero-visual{min-height:320px}
+  .output-top h2{font-size:clamp(1.55rem,7vw,2rem)}
+  .tap-hint{line-height:1.55}
+  .summary-actions{display:grid;grid-template-columns:1fr}
+  .summary-actions button{justify-content:center;text-align:center}
+  .topic-dialog,.detail-dialog{max-height:calc(100dvh - 24px)}
+}
+@media(max-width:370px){
+  .topic-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 12px}
+  .topic-label{font-size:calc(13px + 1pt)}
+  .topic-art{max-height:140px}
+  .topic-card{width:100%}
+}
+@media(max-width:280px){.topic-grid{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.tap-hint-hand{animation:none}.topic-art{transition:none}}
+:root[data-theme=dark] .brand small,:root[data-theme=dark] .nav nav,:root[data-theme=dark] .hero-copy>p,:root[data-theme=dark] .section-head>p,:root[data-theme=dark] .form-note,:root[data-theme=dark] .muted,:root[data-theme=dark] .steps small,:root[data-theme=dark] .output-top p,:root[data-theme=dark] .summary-note,:root[data-theme=dark] footer p,:root[data-theme=dark] footer>span:last-child{color:#c5d4c5}
+:root[data-theme=dark] .kicker,:root[data-theme=dark] .form-eyebrow,:root[data-theme=dark] .report-confidence,:root[data-theme=dark] .fortune-note,:root[data-theme=dark] .manse-summary small{color:#c8dfb4}
 .month-change{display:inline-block;margin:0 0 14px;padding:7px 13px;border-radius:4px;background:#e6efdf;color:#35523a;font-size:calc(12px + 1pt);font-weight:700}
 :root[data-theme=dark] .month-change{background:#314732;color:#dbefcf}
