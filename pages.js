@@ -270,8 +270,14 @@
   $('rerollGame').addEventListener('click',()=>{gameTurn++;showQuickSummary();$('monthChange').textContent='자리 게임 질문을 다시 뽑았습니다.';});
   function renderReport(chart,year,month){
     const report=$('report');report.replaceChildren();
-    if (!window.makeSajuReport) throw new Error('분석 규칙 파일을 불러오지 못했습니다. 새로고침해주세요.');
-    for (const section of window.makeSajuReport(chart,{year,month})) {
+    if (!window.makeFullSajuReport) throw new Error('상세 분석 파일을 불러오지 못했습니다. 새로고침해주세요.');
+    const detailed=window.makeFullSajuReport(chart,{year,month});
+    const overview=add(report,'section','report-card report-overview','');
+    add(overview,'h3','','30줄 핵심 요약');
+    add(overview,'p','',`${year}년 ${month}월을 기준으로 계산한 요약입니다. 아래 12개 분야에서 근거와 한계를 확인하세요.`);
+    const overviewList=add(overview,'ol','','');
+    for(const item of detailed.overview)add(overviewList,'li','',item);
+    for (const section of detailed.sections) {
       const card=add(report,'section','report-card','');
       add(card,'h3','',section.title);
       add(card,'span','report-confidence','판독 수준 · '+section.confidence);

@@ -87,7 +87,7 @@ function checkLoginLimit(req,email) {
 function passwordHash(password,salt=crypto.randomBytes(16).toString('hex')) {return `${salt}:${crypto.scryptSync(password,salt,64).toString('hex')}`;}
 function passwordMatches(password, saved) {const [salt,value]=saved.split(':');return crypto.timingSafeEqual(Buffer.from(value,'hex'),Buffer.from(passwordHash(password,salt).split(':')[1],'hex'));}
 async function generateReport(image,priority,mode) {
-  const res=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{'Authorization':`Bearer ${process.env.OPENAI_API_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({model:process.env.OPENAI_MODEL || 'gpt-4.1',store:false,max_output_tokens:12000,input:[{role:'user',content:[{type:'input_text',text:analysisPrompt({priority,mode})},{type:'input_image',image_url:image,detail:'high'}]}]}),signal:AbortSignal.timeout(150000)});
+  const res=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{'Authorization':`Bearer ${process.env.OPENAI_API_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({model:process.env.OPENAI_MODEL || 'gpt-4.1',store:false,max_output_tokens:18000,input:[{role:'user',content:[{type:'input_text',text:analysisPrompt({priority,mode})},{type:'input_image',image_url:image,detail:'high'}]}]}),signal:AbortSignal.timeout(150000)});
   const result=await res.json();
   if(!res.ok) throw new Error(`AI 분석 요청에 실패했습니다 (${res.status}). 설정과 이용 한도를 확인해주세요.`);
   return (result.output || []).flatMap(item=>item.content || []).filter(c=>c.type==='output_text').map(c=>c.text).join('\n').trim();
