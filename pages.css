@@ -118,3 +118,5 @@
 :root[data-theme=dark] .detail-dialog-head{border-color:#465649}
 .term-help{background:#eef2e9;border-left:3px solid #819975;padding:14px 18px;line-height:1.75;font-size:calc(13px + 1pt);word-break:keep-all}
 :root[data-theme=dark] .term-help{background:#293b2f;color:#e5ede3}
+.month-change{display:inline-block;margin:0 0 14px;padding:7px 13px;border-radius:4px;background:#e6efdf;color:#35523a;font-size:calc(12px + 1pt);font-weight:700}
+:root[data-theme=dark] .month-change{background:#314732;color:#dbefcf}
