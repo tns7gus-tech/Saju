@@ -57,6 +57,30 @@ test('changing accounts on one browser does not transfer saved results',async()=
   assert.equal(result.status,404);
 });
 
+test('login rotates the session token and rejects cross-site or non-JSON writes',async()=>{
+  const initial=await fetch(base+'/api/bootstrap');
+  const cookie=initial.headers.get('set-cookie').split(';')[0];
+  const plaintext=await fetch(base+'/api/login',{method:'POST',headers:{Cookie:cookie,'Content-Type':'text/plain'},body:JSON.stringify({email:'someone@example.com',password:'test'})});
+  assert.equal(plaintext.status,415);
+  const crossSite=await fetch(base+'/api/logout',{method:'POST',headers:{Cookie:cookie,'Content-Type':'application/json',Origin:'https://attacker.example'},body:'{}'});
+  assert.equal(crossSite.status,403);
+  const registered=await fetch(base+'/api/register',{method:'POST',headers:{Cookie:cookie,'Content-Type':'application/json'},body:JSON.stringify({email:'rotation@example.com',password:'very-strong-password'})});
+  assert.equal(registered.status,201);
+  const authenticated=registered.headers.get('set-cookie').split(';')[0];
+  assert.notEqual(authenticated,cookie);
+  const stale=await fetch(base+'/api/bootstrap',{headers:{Cookie:cookie}});
+  assert.equal((await stale.json()).user,null);
+  const fresh=await fetch(base+'/api/bootstrap',{headers:{Cookie:authenticated}});
+  assert.equal((await fresh.json()).user.email,'rotation@example.com');
+});
+
+test('repeated wrong passwords are rate limited',async()=>{
+  const call=client();
+  await call('/api/register',{email:'limit@example.com',password:'very-strong-password'});
+  for(let i=0;i<5;i++)assert.equal((await call('/api/login',{email:'limit@example.com',password:'wrong-password'})).status,401);
+  assert.equal((await call('/api/login',{email:'limit@example.com',password:'very-strong-password'})).status,429);
+});
+
 test('local manse generates dated pillars and a gated deterministic report without an API key',async()=>{
   const call=client();await call('/api/bootstrap');
   const result=await call('/api/manse',{calendar:'solar',date:'2024-02-06',time:'12:30',gender:'male',mode:'date',priority:'연애'});
