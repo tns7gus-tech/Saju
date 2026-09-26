@@ -29,7 +29,7 @@
     const countText=(obj)=>`${obj.element} ${obj.count}개`;
     add('1. 만세력 판독 요약','계산값',[
       `입력: ${input.calendar==='lunar'?'음력':'양력'} ${input.date}${input.leapMonth?'(윤달)':''}, 양력 환산 ${solarDate}, ${input.time?'출생시각 '+input.time:'출생시각 미입력'}. ${input.gender?'대운 계산 기준 선택됨':'대운 계산 기준 미선택'}.`,
-      `${pillars.map(p=>`${p.name} ${p.unknown?'미상':p.hanja}`).join(' / ')}. 일간(일주의 첫 글자, 해석의 기준)은 ${day.stem}(${day.stemElement})입니다. 보이는 글자의 오행은 ${visible}입니다.`,
+      `${[...pillars].reverse().map(p=>`${p.name} ${p.unknown?'미상':p.hanja}`).join(' / ')}. 일간(일주의 첫 글자, 해석의 기준)은 ${day.stem}(${day.stemElement})입니다. 보이는 글자의 오행은 ${visible}입니다.`,
       `${godLines||'일간과 비교할 글자가 없습니다.'}. ${others.map(p=>`${p.name} 지장간(지지 속에 포함된 글자) ${p.hiddenStems?.join('·')||'미확인'}, 12운성 ${p.stage||'미확인'}`).join('; ')}.${pillars[3].unknown?' 시주가 없어 시주 기반 항목은 판정하지 않습니다.':''}`
     ]);
     add('2. 원국 핵심 구조','관찰 + 조건부 해석',[
@@ -73,7 +73,7 @@
     ]);
     add('10. 대운 상세 해석','간지 배열 확인',[
       luck?`대운은 ${luck.direction}이며 출생 뒤 약 ${luck.start[0]}년 ${luck.start[1]}개월 ${luck.start[2]}일 이후 시작하는 것으로 계산됐습니다. 각 구간의 천간을 일간과 비교한 관계입니다. 지지·원국 전체의 상호작용은 아래 한 줄 분류에 반영하지 않았습니다.`:'출생시각과 남성/여성 전통 계산 기준이 모두 필요합니다. 입력하지 않은 값을 추정해서 대운을 채우지 않았습니다.'
-    ],periods.map(p=>`${p.startYear}~${p.endYear}년 · ${p.startAge}세 시작 · ${p.ganZhi} · 천간 ${labels[relation(day.stemElement,stemElements[p.ganZhi[0]])]}${collides(p.ganZhi[1],day.branch)?` · 일지 ${day.branch}와 충(생활·관계 변화 점검)` : ''}. 일/돈/관계의 사건 발생을 확정하지 않습니다.`));
+    ],periods.map(p=>`${p.startYear}~${p.endYear}년 · 대운수 약 ${p.startAge-1}세(세는나이 ${p.startAge}세) 시작 · ${p.ganZhi} · 천간 ${labels[relation(day.stemElement,stemElements[p.ganZhi[0]])]}${collides(p.ganZhi[1],day.branch)?` · 일지 ${day.branch}와 충(생활·관계 변화 점검)` : ''}. 일/돈/관계의 사건 발생을 확정하지 않습니다.`));
     const thisYear=Number(new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Seoul',year:'numeric'}).format(new Date()));
     const years=[];
     for(let y=thisYear;y<thisYear+6;y++){
