@@ -10,3 +10,4 @@
 .report-card p,.report-card li{font-size:13px;color:#4b584a;line-height:1.9;word-break:keep-all}
 .report-card p{margin:11px 0}.report-card ol{padding-left:20px;margin:12px 0 0}.report-card li{margin:8px 0}
 @media(max-width:800px){.report{grid-template-columns:1fr}}@media(max-width:600px){.report-intro{padding:20px}.report-card{padding:20px}}
+.pillar .reading-name,.pillar .stem-role{display:block;font-size:12px;color:#4c654e}.pillar .reading-name{font-weight:700;margin-top:2px}.pillar .stem-role{min-height:20px;margin-top:7px}.pillar small{display:block;white-space:normal;line-height:1.35}.pillar .element-note{color:#809082;margin-top:4px}
