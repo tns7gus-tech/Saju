@@ -8,6 +8,8 @@
   const topics = {목:'새로운 일을 시작할 때 먼저 계획하는 편인가요?',화:'요즘 가장 신나게 이야기할 수 있는 주제는 뭔가요?',토:'쉬는 날 안정감을 느끼는 루틴이 있나요?',금:'결정할 때 가장 중요하게 보는 기준은 뭔가요?',수:'호기심이 생기면 바로 알아보는 편인가요?'};
   const names = ['년주','월주','일주','시주'];
   const keys = ['Year','Month','Day','Time'];
+  const gods = {'比肩':'비견','劫财':'겁재','食神':'식신','伤官':'상관','偏财':'편재','正财':'정재','七杀':'편관','正官':'정관','偏印':'편인','正印':'정인','日主':'일간'};
+  const stages = {'长生':'장생','沐浴':'목욕','冠带':'관대','临官':'건록','帝旺':'제왕','衰':'쇠','病':'병','死':'사','墓':'묘','绝':'절','胎':'태','养':'양'};
 
   function calculate(input) {
     if (!window.Solar || !window.Lunar) throw new Error('달력 계산 파일을 불러오지 못했습니다. 인터넷 연결을 확인한 뒤 새로고침해주세요.');
@@ -33,7 +35,9 @@
     const pillars = keys.map((key,i) => {
       if (key === 'Time' && !known) return {name:names[i],unknown:true};
       const hanja = eight['get'+key]();
-      return {name:names[i],hanja,stem:hanja[0],branch:hanja[1],stemElement:stems[hanja[0]],branchElement:branches[hanja[1]]};
+      const god=eight['get'+key+'ShiShenGan']();
+      const stage=eight['get'+key+'DiShi']();
+      return {name:names[i],hanja,stem:hanja[0],branch:hanja[1],stemElement:stems[hanja[0]],branchElement:branches[hanja[1]],tenGod:gods[god]||god,hiddenStems:eight['get'+key+'HideGan'](),stage:stages[stage]||stage};
     });
     const elements = Object.fromEntries(['목','화','토','금','수'].map(x => [x,0]));
     for (const p of pillars) if (!p.unknown) {elements[p.stemElement]++; elements[p.branchElement]++;}
@@ -44,7 +48,7 @@
     let luck = null;
     if (known && input.gender) {
       const yun = eight.getYun(input.gender === 'male' ? 1 : 0);
-      luck = {direction: yun.isForward() ? '순행' : '역행', start: [yun.getStartYear(),yun.getStartMonth(),yun.getStartDay()], periods:yun.getDaYun(9).filter(d=>d.getIndex()>0).map(d=>`${d.getStartYear()}년(${d.getStartAge()}세) ${d.getGanZhi()}`)};
+      luck = {direction: yun.isForward() ? '순행' : '역행', start: [yun.getStartYear(),yun.getStartMonth(),yun.getStartDay()], periods:yun.getDaYun(9).filter(d=>d.getIndex()>0).map(d=>({startYear:d.getStartYear(),endYear:d.getEndYear(),startAge:d.getStartAge(),ganZhi:d.getGanZhi()}))};
     }
     return {input,solarDate:solar.toYmd(),pillars,elements,luck,warnings,dayElement:pillars[2].stemElement};
   }
@@ -63,10 +67,17 @@
       add(card,'small','',p.unknown?'출생시각 필요':`${p.stemElement} / ${p.branchElement}`);
     }
     $('elements').textContent='보이는 글자 기준 오행 · '+Object.entries(elements).map(([e,n])=>`${e} ${n}`).join('  /  ');
-    $('luck').textContent=luck?`대운 ${luck.direction} · 출생 후 ${luck.start[0]}년 ${luck.start[1]}개월 ${luck.start[2]}일 시작 · ${luck.periods.slice(0,5).join(' → ')}`:'대운 · 출생 시각과 계산 기준 선택 시 표시';
+    $('luck').textContent=luck?`대운 ${luck.direction} · 출생 후 ${luck.start[0]}년 ${luck.start[1]}개월 ${luck.start[2]}일 시작 · ${luck.periods.slice(0,5).map(p=>`${p.startYear}년 ${p.ganZhi}`).join(' → ')}`:'대운 · 출생 시각과 계산 기준 선택 시 표시';
     $('warnings').textContent=warnings.join(' ');
-    const high=Object.entries(elements).sort((a,b)=>b[1]-a[1])[0];
-    $('reading').textContent=`일간은 ${pillars[2].stem}(${dayElement})입니다. 일간은 자신을 나타내는 기준 글자입니다. 표시된 ${input.time?'8':'6'}글자에서는 ${high[0]}이(가) ${high[1]}개로 가장 많습니다. 이 단순 개수만으로 성격이나 궁합, 건강, 재물의 결과를 단정할 수 없습니다. 월지의 계절, 숨은 글자, 합과 충을 함께 확인해야 합니다.`;
+    const report=$('report');report.replaceChildren();
+    if (!window.makeSajuReport) throw new Error('분석 규칙 파일을 불러오지 못했습니다. 새로고침해주세요.');
+    for (const section of window.makeSajuReport(chart)) {
+      const card=add(report,'section','report-card','');
+      add(card,'h3','',section.title);
+      add(card,'span','report-confidence','판독 수준 · '+section.confidence);
+      for(const paragraph of section.paragraphs)add(card,'p','',paragraph);
+      if(section.items.length){const list=add(card,'ol','', '');for(const item of section.items)add(list,'li','',item);}
+    }
     $('question').textContent=topics[dayElement];
     $('output').hidden=false;
     $('output').scrollIntoView({behavior:'smooth',block:'start'});
