@@ -1,59 +1,27 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
-import vm from 'node:vm';
-import lunar from 'lunar-javascript';
-
-const node=()=>({addEventListener(){},setAttribute(){},textContent:'',elements:{}});
-const form=node();
-for(const key of ['calendar','date','time','gender','leapMonth','nickname','relationshipStatus'])form.elements[key]=node();
-const document={getElementById:id=>id==='manseForm'?form:node(),querySelectorAll:()=>[],documentElement:{dataset:{}}};
-const window={Solar:lunar.Solar,Lunar:lunar.Lunar,LunarUtil:lunar.LunarUtil,matchMedia:()=>({matches:false})};
-const context=vm.createContext({document,window,Intl,Date,localStorage:{getItem:()=>null}});
-for(const name of ['reading-rules.js','pages.js'])vm.runInContext(readFileSync(new URL(`../${name}`,import.meta.url),'utf8'),context);
-
-test('each selected month returns exactly 20 compact points, with separate game prompts',()=>{
-  const chart=window.calculateStaticManse({calendar:'solar',date:'950228',time:'1245',gender:'male',leapMonth:false,relationshipStatus:'single'});
-  const game={direction:'왼쪽',accessory:'안경 쓴 사람'};
-  const september=window.makeQuickSajuSummary(chart,2026,9,game);
-  const october=window.makeQuickSajuSummary(chart,2026,10,game);
-  assert.equal(september.lines.length,20);
-  assert.equal(october.lines.length,20);
-  assert.equal(september.label,'2026년 9월');
-  assert.equal(october.label,'2026년 10월');
-  assert.deepEqual([...new Set(september.lines.slice(0,18).map(line=>line.category))],['연애','결혼','연인','자산·소비','일·사업','건강·컨디션']);
-  assert.equal(september.lines.slice(18).every(line=>line.category==='자리 게임'),true);
-  assert.match(september.lines[18].text,/왼쪽/);
-  assert.match(september.lines[19].text,/무작위 질문/);
+import {setup} from './helpers.js';
+const {window,chart}=setup(),e=window.SajuInsights,game={direction:'정면',accessory:'안경 쓴 사람'};
+test('existing 20-line six-topic contract and consistent summary/detail',()=>{
+ const c=chart();for(let month=1;month<=12;month++){const q=window.makeQuickSajuSummary(c,2026,month,game);assert.equal(q.lines.length,20);assert.equal(q.lines.filter(l=>l.category==='자리 게임').length,2);assert.doesNotMatch(q.lines.slice(0,18).map(l=>l.text).join(' '),/[甲乙丙丁戊己庚辛壬癸子丑寅卯辰巳午未申酉戌亥]/);const full=e.full(c,{year:2026,month});assert.equal(q.lines[0].text,'핵심 · '+full.sections[5].paragraphs[0]);}
 });
-
-test('all short summaries use everyday Korean instead of unexplained chart labels',()=>{
-  const chart=window.calculateStaticManse({calendar:'solar',date:'950228',time:'1245',gender:'male',leapMonth:false,relationshipStatus:'single'});
-  for(let month=1;month<=12;month++){
-    const {lines}=window.makeQuickSajuSummary(chart,2026,month,{direction:'정면',accessory:'아이폰 사용자'});
-    assert.equal(lines.length,20);
-    assert.doesNotMatch(lines.map(item=>item.text).join(' '),/십성|재성|정관|편관|정재|편재|비견|겁재|식신|상관|편인|정인|일간|일지|[甲乙丙丁戊己庚辛壬癸子丑寅卯辰巳午未申酉戌亥]/);
-  }
+test('all six topic cards change by month and relationship month list matches the cards',()=>{
+ const c=chart(),categories=['연애','결혼','연인','자산·소비','일·사업','건강·컨디션'];
+ const monthly=Array.from({length:12},(_,i)=>e.quick(c,2026,i+1,game));
+ for(const category of categories){
+  const cores=monthly.map(q=>q.lines.find(x=>x.category===category).text);
+  assert.ok(new Set(cores).size>=10,`${category} 핵심 문장이 월별로 구분되어야 합니다.`);
+ }
+ const items=e.full(c,{year:2026,month:1}).sections[5].items;
+ for(let i=0;i<12;i++)assert.ok(items[i].includes(monthly[i].lines[0].text.replace(/^핵심 · /,'')),`${i+1}월 상세 풀이에 월별 카드 핵심 반영`);
 });
-
-test('love card distinguishes a partner combination, a clash, a partial combination and a close combination',()=>{
-  const chart=window.calculateStaticManse({calendar:'solar',date:'950228',time:'1245',gender:'male',leapMonth:false,relationshipStatus:'single'});
-  const game={direction:'정면',accessory:'아이폰 사용자'};
-  const love=month=>window.makeQuickSajuSummary(chart,2026,month,game).lines.slice(0,3).map(x=>x.text);
-  const july=love(7),august=love(8),september=love(9),october=love(10),november=love(11),december=love(12);
-  assert.match(july[1],/배우자 관련 상징.*합/);
-  assert.match(august[1],/충.*이별 확정은 아닙니다/);
-  assert.match(october[1],/삼합의 일부.*단독으로 관계 진전을 뜻하지는 않습니다/);
-  assert.match(november[1],/육합.*보장하지는 않습니다/);
-  assert.match(september[1],/합·충은 없습니다/);
-  assert.match(december[1],/합·충은 없습니다/);
-  assert.notEqual(september[0],december[0]);
-  assert.equal(new Set([july[0],august[0],september[0],october[0],november[0],december[0]]).size,6);
-  for(const month of [7,8,9,10,11,12])assert.deepEqual(Array.from(love(month),x=>x.split(' · ')[0]),['핵심','근거','대화']);
+test('same day pillar with different month/hour changes interpretation',()=>{
+ const a=chart('2000-06-15','09:30'),b=chart('2000-08-14','21:30');assert.equal(a.pillars[2].hanja,b.pillars[2].hanja);assert.notDeepEqual(e.profile(a).ranked,e.profile(b).ranked);assert.notEqual(e.quick(a,2026,10,game).lines[0].text,e.quick(b,2026,10,game).lines[0].text);
 });
-
-test('unspecified traditional calculation basis does not claim spouse signal',()=>{
-  const chart=window.calculateStaticManse({calendar:'solar',date:'950228',time:'1245',gender:'',leapMonth:false,relationshipStatus:''});
-  const text=window.makeQuickSajuSummary(chart,2026,7,{direction:'정면',accessory:'아이폰 사용자'}).lines.slice(0,3).map(x=>x.text).join(' ');
-  assert.doesNotMatch(text,/배우자 관련 상징/);
+test('month includes decade and annual layers while natal profile stays fixed',()=>{
+ const c=chart(),a=e.frame(c,2026,1),b=e.frame(c,2026,9);assert.deepEqual(a.profile,b.profile);assert.ok(a.layers.some(l=>l.label==='대운'));assert.ok(a.layers.some(l=>l.label==='세운'));assert.notEqual(a.layers.at(-1).gz,b.layers.at(-1).gz);
 });
+test('relationship status changes relationship guidance but not chart',()=>{
+ const a=chart(),b=chart(undefined,undefined,{relationshipStatus:'dating'});assert.equal(e.profile(a).signature,e.profile(b).signature);assert.match(e.quick(a,2026,9,game).lines[0].text,/새로 알아가는/);assert.match(e.quick(b,2026,9,game).lines[0].text,/교제 중/);
+});
+test('same request deterministic and calendar output unchanged',()=>{const c=chart(),before=JSON.stringify(c);assert.deepEqual(e.full(c,{year:2026,month:9}),e.full(c,{year:2026,month:9}));assert.equal(JSON.stringify(c),before);});

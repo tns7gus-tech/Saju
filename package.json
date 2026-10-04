@@ -7,8 +7,11 @@
     "node": ">=22.13"
   },
   "scripts": {
-    "start": "node server.js",
-    "test": "node --test"
+    "start": "node --env-file-if-exists=.env home-server.js",
+    "test": "node --test",
+    "start:legacy": "node server.js",
+    "start:home": "node --env-file=.env home-server.js",
+    "start:demo": "node dev-server.js"
   },
   "dependencies": {
     "lunar-javascript": "1.7.7"

@@ -1,0 +1,14 @@
+import fs from 'node:fs';
+import {calculate,insights,today} from '../backend/engine.js';
+import {createLocalLLM} from '../backend/local-llm.js';
+const input={calendar:'solar',date:'2000-06-15',time:'09:30',gender:'male'};
+const chart=calculate(input),[y,m,d]=today().split('-').map(Number);
+const f=insights.frame(chart,y,m,d);
+const start=performance.now();
+const result=await createLocalLLM(process.env)(chart,'이직을 고민하고 있는데 어떤 업무 방식을 살펴보면 좋을까요?',{profile:f.profile.top.map(t=>({title:t.title,evidence:t.evidence})),periodEvidence:f.evidence,reference:insights.consult(chart,'이직을 고민하고 있는데 어떤 업무 방식을 살펴보면 좋을까요?',today())});
+const elapsed=+((performance.now()-start)/1000).toFixed(2);
+const korean=/[가-힣]/.test(result.paragraphs.join(''));
+if(!korean)throw Error('한국어 응답을 확인하지 못했습니다.');
+fs.mkdirSync(new URL('../data/home/',import.meta.url),{recursive:true});
+fs.writeFileSync(new URL('../data/home/ai-smoke.json',import.meta.url),JSON.stringify({model:process.env.OLLAMA_MODEL,checkedAt:new Date().toISOString(),elapsedSeconds:elapsed,input,result},null,2));
+console.log(JSON.stringify({model:process.env.OLLAMA_MODEL,elapsedSeconds:elapsed,paragraphs:result.paragraphs},null,2));

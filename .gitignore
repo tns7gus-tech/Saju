@@ -2,3 +2,8 @@ data/
 .env
 node_modules/
 *.log
+.DS_Store
+__pycache__/
+*.py[cod]
+# Private training sources and birth-chart screenshots
+data[1-5]/

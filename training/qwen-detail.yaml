@@ -1,0 +1,25 @@
+# Pilot settings. Split long reports into the requested detailed sections.
+model: mlx-community/Qwen3-8B-4bit
+data: data/training/detail/normalized
+adapter_path: data/training/adapters/detail
+train: true
+fine_tune_type: lora
+batch_size: 1
+num_layers: 1
+iters: 40
+learning_rate: 0.00001
+max_seq_length: 16384
+grad_checkpoint: true
+mask_prompt: true
+seed: 42
+steps_per_report: 5
+steps_per_eval: 20
+save_every: 20
+lora_parameters:
+  keys:
+    - mlp.gate_proj
+    - mlp.up_proj
+    - mlp.down_proj
+  rank: 8
+  scale: 16.0
+  dropout: 0.05
